@@ -1,26 +1,25 @@
 var express = require("express");
 var router = express.Router();
 
-/* GET evaluaions listing. */
+// users - user - penalty_log
 router.get("/", function (req, res, next) {
-  res.send("evaluation's list");
+  res.send("user's penalty_log");
 });
 
 router.get("/:id", function (req, res, next) {
-  res.send("evaluation " + req.params.id);
+  res.send("user " + req.params.id + " penalty_log");
 });
 
 router.post("/:id", function (req, res, next) {
-  res.send("new evaluation");
+  res.send("new penalty_log");
 });
 
 router.put("/:id", function (req, res, next) {
-  res.send("update evaluation");
+  res.send("update penalty_log");
 });
 
 router.delete("/:id", function (req, res, next) {
-  res.send("delete evaluation");
+  res.send("delete penalty_log");
 });
-
 
 module.exports = router;

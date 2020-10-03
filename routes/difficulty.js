@@ -1,26 +1,24 @@
 var express = require("express");
 var router = express.Router();
 
-/* GET evaluaions listing. */
+// difficulty
 router.get("/", function (req, res, next) {
-  res.send("evaluation's list");
+  res.send("question's difficulty");
 });
 
 router.get("/:id", function (req, res, next) {
-  res.send("evaluation " + req.params.id);
+  res.send("question " + req.params.id + " difficulty");
 });
 
 router.post("/:id", function (req, res, next) {
-  res.send("new evaluation");
+  res.send("new difficulty");
 });
 
 router.put("/:id", function (req, res, next) {
-  res.send("update evaluation");
+  res.send("update difficulty");
 });
 
 router.delete("/:id", function (req, res, next) {
-  res.send("delete evaluation");
+  res.send("delete difficulty");
 });
-
-
 module.exports = router;
