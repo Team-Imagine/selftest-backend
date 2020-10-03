@@ -1,24 +1,24 @@
 var express = require("express");
 var router = express.Router();
 
-// users - user - point_log
+// questions - answers
 router.get("/", function (req, res, next) {
-  res.send("user's point_log");
+  res.send("question's answers");
 });
 
 router.get("/:id", function (req, res, next) {
-  res.send("user " + req.params.id + " point_log");
+  res.send("question " + req.params.id + " answers");
 });
 
 router.post("/:id", function (req, res, next) {
-  res.send("new point_log");
+  res.send("new answers");
 });
 
 router.put("/:id", function (req, res, next) {
-  res.send("update point_log");
+  res.send("update answers");
 });
 
 router.delete("/:id", function (req, res, next) {
-  res.send("delete point_log");
+  res.send("delete answers");
 });
 module.exports = router;
