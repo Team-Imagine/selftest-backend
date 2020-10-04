@@ -9,19 +9,10 @@ require("dotenv").config();
 // routers
 const indexRouter = require("./routes/index");
 const userRouter = require("./routes/user");
-const bookmarkRouter = require("./routes/bookmark");
-const commentRouter = require("./routes/comment");
-const commentable_entityRouter = require("./routes/commentable_entity");
-const courseRouter = require("./routes/course");
-const difficultyRouter = require("./routes/difficulty");
-const evaluatable_entityRouter = require("./routes/evaluatable_entity");
-const evaluationRouter = require("./routes/evaluation");
-const penaltyRouter = require("./routes/penalty");
-const pointRouter = require("./routes/point");
-const questionRouter = require("./routes/question");
 const subjectRouter = require("./routes/subject");
-const test_questionRouter = require("./routes/test_question");
-const test_setRouter = require("./routes/test_set");
+const courseRouter = require("./routes/course");
+const questionRouter = require("./routes/question");
+const answerRouter = require("./routes/answer");
 
 const sequelize = require("./models").sequelize;
 
@@ -52,20 +43,11 @@ app.use(
 
 app.use("/", indexRouter);
 app.use("/user", userRouter);
-app.use("/answer", answerRouter);
-app.use("/comment", commentRouter);
-app.use("/bookmark", bookmarkRouter);
-app.use("/commentable_entity", commentable_entityRouter);
-app.use("/course", courseRouter);
-app.use("/difficulty", difficultyRouter);
-app.use("/evaluatable_entity", evaluatable_entityRouter);
-app.use("/evaluation", evaluationRouter);
-app.use("/penalty", penaltyRouter);
-app.use("/point", pointRouter);
-app.use("/question", questionRouter);
 app.use("/subject", subjectRouter);
-app.use("/test_question", test_questionRouter);
-app.use("/test_set", test_setRouter);
+app.use("/course", courseRouter);
+app.use("/question", questionRouter);
+app.use("/answer", answerRouter);
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
