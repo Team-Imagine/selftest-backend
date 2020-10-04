@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     "user",
     {
       email: {
-        type: DataTypes.STRING(20),
+        type: DataTypes.STRING(40),
         allowNull: false,
         unique: true,
         comment: "이메일",
@@ -13,6 +13,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
         comment: "닉네임",
+      },
+      password: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: true,
+        comment: "비밀번호",
       },
       first_name: {
         type: DataTypes.STRING(20),
