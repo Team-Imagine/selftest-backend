@@ -11,7 +11,7 @@
 - 명령창에서 실행
 
 ```sh
-npm init
+npm install
 ```
 
 ### .env 파일 생성
