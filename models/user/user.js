@@ -14,6 +14,12 @@ module.exports = (sequelize, DataTypes) => {
         unique: true,
         comment: "닉네임",
       },
+      password: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: true,
+        comment: "비밀번호",
+      },
       first_name: {
         type: DataTypes.STRING(20),
         allowNull: false,
