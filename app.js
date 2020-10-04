@@ -8,7 +8,7 @@ require("dotenv").config();
 
 // routers
 const indexRouter = require("./routes/index");
-const answerRouter = require("./routes/answer");
+const userRouter = require("./routes/user");
 const bookmarkRouter = require("./routes/bookmark");
 const commentRouter = require("./routes/comment");
 const commentable_entityRouter = require("./routes/commentable_entity");
@@ -22,7 +22,6 @@ const questionRouter = require("./routes/question");
 const subjectRouter = require("./routes/subject");
 const test_questionRouter = require("./routes/test_question");
 const test_setRouter = require("./routes/test_set");
-const usersRouter = require("./routes/users");
 
 const sequelize = require("./models").sequelize;
 
@@ -52,7 +51,7 @@ app.use(
 );
 
 app.use("/", indexRouter);
-app.use("/users", usersRouter);
+app.use("/user", userRouter);
 app.use("/answer", answerRouter);
 app.use("/comment", commentRouter);
 app.use("/bookmark", bookmarkRouter);
