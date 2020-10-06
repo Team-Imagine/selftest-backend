@@ -10,10 +10,20 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
   const { email, username, password, first_name, last_name } = req.body;
   try {
     // 동일한 이메일로 가입한 사용자가 있는지 확인
-    const existingUser = await User.findOne({ where: { email } });
+    let existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      req.flash("joinError", "이미 가입된 이메일입니다.");
-      return res.redirect("/join");
+      return res.json({
+        loginSuccess: false,
+        msg: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
+      });
+    }
+
+    existingUser = await User.findOne({ where: { username } });
+    if (existingUser) {
+      return res.json({
+        loginSuccess: false,
+        msg: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
+      });
     }
     const hash = await bcrypt.hash(password, 12);
     await User.create({
@@ -23,10 +33,14 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
       first_name,
       last_name,
     });
-    return res.redirect("/");
+    return res.status(200).json({
+      loginSuccess: true,
+    });
   } catch (error) {
-    console.error(error);
-    return next(error);
+    return res.json({
+      loginSuccess: false,
+      msg: "DB 오류",
+    });
   }
 });
 
@@ -45,7 +59,11 @@ router.post("/login", isNotLoggedIn, (req, res, next) => {
         console.error(loginError);
         return next(loginError);
       }
-      return res.redirect("/");
+      return res.status(200).json({
+        loginSuccess: true,
+        user_id: user.id,
+        redirect: "/",
+      });
     });
   })(req, res, next);
 });
@@ -53,7 +71,9 @@ router.post("/login", isNotLoggedIn, (req, res, next) => {
 router.get("/logout", isLoggedIn, (req, res) => {
   req.logout();
   req.session.destroy();
-  res.redirect("/");
+  res.status(200).json({
+    logoutSuccess: true,
+  });
 });
 
 module.exports = router;
