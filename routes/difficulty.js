@@ -1,24 +1,26 @@
 var express = require("express");
 var router = express.Router();
 
-const { LikeableEntity } = require("../models");
+const { Difficulty } = require("../models");
 
-// LikeableEntity
+// difficulty
 router.get("/", function (req, res, next) {
-  res.send("LikeableEntity list");
+  res.send("difficulty list");
 });
 
 router.get("/:type", async (req, res, next) => {
-  res.send("LikeableEntity " + req.params.type + " data");
+  res.send("difficulty " + req.params.type + " data");
 });
 
-// CREATE // take LikeableEntity from react page & store data to db
+// CREATE // take difficulty from react page & store data to db
 router.post("/", async (req, res, next) => {
-  const { entity_type } = req.body;
+  const { score, question_id, user_id  } = req.body;
 
   try {
-    await LikeableEntity.create({
-      entity_type,
+    await Difficulty.create({
+      score,
+      question_id,
+      user_id,
     });
 
     console.log('success');
@@ -29,11 +31,11 @@ router.post("/", async (req, res, next) => {
 });
 
 router.put("/:id", function (req, res, next) {
-  res.send("update LikeableEntity: " + req.params.id);
+  res.send("update difficulty: " + req.params.id);
 });
 
 router.delete("/", async (req, res, next) => {
-  res.send("delete LikeableEntity: " + req.params.id);
+  res.send("delete difficulty: " + req.params.id);
 
 
 
