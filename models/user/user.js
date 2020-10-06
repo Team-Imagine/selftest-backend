@@ -24,6 +24,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(20),
         allowNull: false,
         comment: "이름",
+
+
+        
       },
       last_name: {
         type: DataTypes.STRING(20),
