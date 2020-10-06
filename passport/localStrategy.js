@@ -14,7 +14,7 @@ module.exports = (passport) => {
       async (email, password, done) => {
         try {
           // 이메일로 가입된 회원 확인
-          const existingUser = await User.find({ where: { email } });
+          const existingUser = await User.findOne({ where: { email } });
 
           if (existingUser) {
             // 가입한 회원이라면 비밀번호를 대조
