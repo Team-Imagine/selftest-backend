@@ -37,7 +37,7 @@ router.put("/:id", function (req, res, next) {
 router.delete("/", async (req, res, next) => {
   const { user_id, question_id } = req.body;
   
-  Freshness.destroy({where: { 
+  await Freshness.destroy({where: { 
     user_id: user_id,
     question_id: question_id,
   }
