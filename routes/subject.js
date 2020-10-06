@@ -1,24 +1,82 @@
 var express = require("express");
 var router = express.Router();
+const { Subject, Course } = require("../models");
 
-// subject
-router.get("/", function (req, res, next) {
-  res.send("subject's list");
+// 모든 과목 리스트를 불러옴
+router.get("/all", async (req, res, next) => {
+  try {
+    const subjects = await Subject.findAll({
+      attributes: ["id", "title"],
+      order: [["title", "DESC"]],
+    });
+
+    if (subjects.length == 0) {
+      return res.json({
+        success: false,
+        msg: "등록된 과목이 없습니다.",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      subjects,
+    });
+  } catch (error) {
+    return res.json({
+      success: false,
+      msg: "DB 오류",
+    });
+  }
 });
 
-router.get("/:id", function (req, res, next) {
-  res.send("subject " + req.params.id);
+// 해당 과목 id에 해당하는 모든 강의를 불러옴
+router.get("/:id", async (req, res, next) => {
+  try {
+    const courses = await Course.findAll({
+      attributes: ["id", "title", "subject_id"],
+      where: { subject_id: req.params.id },
+      order: [["title", "DESC"]],
+    });
+
+    if (courses.length == 0) {
+      return res.json({
+        success: false,
+        msg: "해당 과목 id로 등록된 강의가 없습니다.",
+      });
+    }
+    res.status(200).json(questions);
+  } catch (error) {
+    return res.json({
+      success: false,
+      msg: "DB 오류",
+    });
+  }
 });
 
-router.post("/:id", function (req, res, next) {
-  res.send("new subject");
+// 새로운 과목을 등록
+router.post("/", async (req, res, next) => {
+  const { title } = req.body;
+  try {
+    // 동일한 과목 이름을 가진 강의가 있는지 확인
+    const existingSubject = await Subject.findOne({ where: { title } });
+    if (existingSubject) {
+      return res.json({
+        success: false,
+        msg: "해당 과목 이름으로 등록된 과목이 존재합니다.",
+      });
+    }
+    await Subject.create({
+      title,
+    });
+    return res.status(200).json({
+      success: true,
+      msg: "과목이 성공적으로 등록되었습니다.",
+    });
+  } catch (error) {
+    return res.json({
+      success: false,
+      msg: "DB 오류",
+    });
+  }
 });
 
-router.put("/:id", function (req, res, next) {
-  res.send("update subject");
-});
-
-router.delete("/:id", function (req, res, next) {
-  res.send("delete subject");
-});
 module.exports = router;
