@@ -13,7 +13,7 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
     let existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.json({
-        loginSuccess: false,
+        joinSuccess: false,
         msg: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
       });
     }
@@ -21,7 +21,7 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
     existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
       return res.json({
-        loginSuccess: false,
+        joinSuccess: false,
         msg: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
       });
     }
@@ -34,11 +34,11 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
       last_name,
     });
     return res.status(200).json({
-      loginSuccess: true,
+      joinSuccess: true,
     });
   } catch (error) {
     return res.json({
-      loginSuccess: false,
+      joinSuccess: false,
       msg: "DB 오류",
     });
   }
