@@ -14,7 +14,7 @@ router.get("/:type", async (req, res, next) => {
 
 // CREATE // take difficulty from react page & store data to db
 router.post("/", async (req, res, next) => {
-  const { score, question_id, user_id  } = req.body;
+  const { score, question_id, user_id } = req.body;
 
   try {
     await Difficulty.create({
@@ -30,14 +30,31 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.put("/:id", function (req, res, next) {
-  res.send("update difficulty: " + req.params.id);
+router.patch("/", function (req, res, next) {
+  const { score, user_id, question_id } = req.body;
+
+  Difficulty.update({
+    score: score
+  },
+    {
+      where: {
+        user_id: user_id,
+        question_id: question_id,
+      }
+    })
+    .then((result) => {
+
+    })
+    .catch((err) => {
+      console.log(err);
+      next(err);
+    })
 });
 
 router.delete("/", async (req, res, next) => {
   const { user_id, question_id } = req.body;
 
-  Like.destroy({
+  Difficulty.destroy({
     where: {
       user_id: user_id,
       question_id: question_id,

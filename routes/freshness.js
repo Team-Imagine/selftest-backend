@@ -36,12 +36,11 @@ router.put("/:id", function (req, res, next) {
 
 router.delete("/", async (req, res, next) => {
   const { user_id, question_id } = req.body;
-
-  Like.destroy({
-    where: {
-      user_id: user_id,
-      question_id: question_id,
-    }
+  
+  Freshness.destroy({where: { 
+    user_id: user_id,
+    question_id: question_id,
+  }
   })
     .then((result) => {
 
