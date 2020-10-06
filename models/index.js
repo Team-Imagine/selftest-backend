@@ -17,13 +17,15 @@ db.Course = require("./course/course")(sequelize, Sequelize);
 db.Bookmark = require("./user/bookmark")(sequelize, Sequelize);
 db.TestSet = require("./test/test_set")(sequelize, Sequelize);
 db.TestQuestion = require("./test/test_question")(sequelize, Sequelize);
-db.EvaluatableEntity = require("./evaluation/evaluatable_entity")(sequelize, Sequelize);
-db.Evaluation = require("./evaluation/evaluation")(sequelize, Sequelize);
+db.LikeableEntity = require("./evaluation/likeable_entity")(sequelize, Sequelize);
+db.Like = require("./evaluation/like")(sequelize, Sequelize);
 db.Difficulty = require("./evaluation/difficulty")(sequelize, Sequelize);
+db.Freshness = require("./evaluation/freshness")(sequelize, Sequelize);
 db.CommentableEntity = require("./comment/commentable_entity")(sequelize, Sequelize);
 db.Comment = require("./comment/comment")(sequelize, Sequelize);
-// db.Point = require("./user/point")(sequelize, Sequelize);
-// db.Penalty = require("./user/penalty")(sequelize, Sequelize);
+db.PointLog = require("./user/point_log")(sequelize, Sequelize);
+db.PenaltyLog = require("./user/penalty_log")(sequelize, Sequelize);
+db.Attendance = require("./user/attendance")(sequelize, Sequelize);
 
 // Define database relationship
 db.Subject.hasMany(db.Course, { foreignKey: "subject_id", sourceKey: "id" });
@@ -41,13 +43,13 @@ db.User.hasMany(db.Question, { foreignKey: "user_id", sourceKey: "id" });
 db.Question.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
 db.Question.hasMany(db.Answer, { foreignKey: "question_id", sourceKey: "id" });
 db.Question.belongsTo(db.CommentableEntity, { foreignKey: "commentable_entity_id", targetKey: "id" });
-db.Question.belongsTo(db.EvaluatableEntity, { foreignKey: "evaluatable_entity_id", targetKey: "id" });
+db.Question.belongsTo(db.LikeableEntity, { foreignKey: "likeable_entity_id", targetKey: "id" });
 
 db.User.hasMany(db.Answer, { foreignKey: "user_id", sourceKey: "id" });
 db.Answer.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
 db.Answer.belongsTo(db.Question, { foreignKey: "question_id", targetKey: "id" });
 db.Answer.belongsTo(db.CommentableEntity, { foreignKey: "commentable_entity_id", targetKey: "id" });
-db.Answer.belongsTo(db.EvaluatableEntity, { foreignKey: "evaluatable_entity_id", targetKey: "id" });
+db.Answer.belongsTo(db.LikeableEntity, { foreignKey: "likeable_entity_id", targetKey: "id" });
 
 db.User.hasMany(db.Bookmark, { foreignKey: "user_id", sourceKey: "id" });
 db.Bookmark.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
@@ -58,13 +60,25 @@ db.Comment.belongsTo(db.CommentableEntity, { foreignKey: "commentable_entity_id"
 db.User.hasMany(db.Comment, { foreignKey: "user_id", sourceKey: "id" });
 db.Comment.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
 
-db.EvaluatableEntity.hasMany(db.Evaluation, { foreignKey: "evaluatable_entity_id", sourceKey: "id" });
-db.Evaluation.belongsTo(db.EvaluatableEntity, { foreignKey: "evaluatable_entity_id", targetKey: "id" });
-db.User.hasMany(db.Evaluation, { foreignKey: "user_id", sourceKey: "id" });
-db.Evaluation.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
+db.LikeableEntity.hasMany(db.Like, { foreignKey: "likeable_entity_id", sourceKey: "id" });
+db.Like.belongsTo(db.LikeableEntity, { foreignKey: "likeable_entity_id", targetKey: "id" });
+db.User.hasMany(db.Like, { foreignKey: "user_id", sourceKey: "id" });
+db.Like.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
 
 db.User.hasMany(db.Difficulty, { foreignKey: "user_id", sourceKey: "id" });
 db.Difficulty.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
 db.Difficulty.belongsTo(db.Question, { foreignKey: "question_id", targetKey: "id" });
+
+db.User.hasMany(db.Freshness, { foreignKey: "user_id", sourceKey: "id" });
+db.Freshness.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
+db.Freshness.belongsTo(db.Question, { foreignKey: "question_id", targetKey: "id" });
+
+db.User.hasMany(db.PointLog, { foreignKey: "user_id", sourceKey: "id" });
+db.PointLog.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
+db.User.hasMany(db.PenaltyLog, { foreignKey: "user_id", sourceKey: "id" });
+db.PenaltyLog.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
+
+db.User.hasMany(db.Attendance, { foreignKey: "user_id", sourceKey: "id" });
+db.Attendance.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
 
 module.exports = db;
