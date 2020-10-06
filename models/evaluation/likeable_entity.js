@@ -1,11 +1,11 @@
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
-    "evaluatable_entity",
+    "likeable_entity",
     {
       entity_type: {
         type: DataTypes.STRING(20),
         allowNull: false,
-        comment: "평가 객체 타입",
+        comment: "좋아요 객체 타입",
       },
     },
     {

@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
       amount: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
-        comment: "점수",
+        comment: "점수 변동 내용",
       },
       content: {
         type: DataTypes.STRING(100),
