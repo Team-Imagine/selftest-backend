@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
-    "penalty",
+    "penalty_log",
     {
       term: {
         type: DataTypes.INTEGER,
