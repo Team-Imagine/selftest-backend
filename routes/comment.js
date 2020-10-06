@@ -30,10 +30,10 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/", function (req, res, next) {
+router.patch("/", async (req, res, next) => {
     const { content, commentable_entity_id } = req.body;
 
-    Comment.update({
+    await Comment.update({
       comment: content
     },
       {
@@ -53,7 +53,7 @@ router.patch("/", function (req, res, next) {
 router.delete("/", async (req, res, next) => {
   const { commentable_entity_id } = req.body;
   
-  Comment.destroy({where: { id: commentable_entity_id }})
+  await Comment.destroy({where: { id: commentable_entity_id }})
     .then((result) => {
 
     })

@@ -30,10 +30,10 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/", function (req, res, next) {
+router.patch("/", async (req, res, next) => {
   const { score, user_id, question_id } = req.body;
 
-  Difficulty.update({
+  await Difficulty.update({
     score: score
   },
     {
@@ -54,7 +54,7 @@ router.patch("/", function (req, res, next) {
 router.delete("/", async (req, res, next) => {
   const { user_id, question_id } = req.body;
 
-  Difficulty.destroy({
+  await Difficulty.destroy({
     where: {
       user_id: user_id,
       question_id: question_id,
