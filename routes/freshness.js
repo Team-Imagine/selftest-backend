@@ -35,10 +35,21 @@ router.put("/:id", function (req, res, next) {
 });
 
 router.delete("/", async (req, res, next) => {
-  res.send("delete freshness: " + req.params.id);
+  const { user_id, question_id } = req.body;
 
+  Like.destroy({
+    where: {
+      user_id: user_id,
+      question_id: question_id,
+    }
+  })
+    .then((result) => {
 
-
+    })
+    .catch((err) => {
+      console.error(err);
+      next(err);
+    })
 });
 
 

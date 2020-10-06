@@ -22,7 +22,7 @@ router.post("/", async (req, res, next) => {
       likeable_entity_id,
       user_id,
     });
-
+    
     console.log('success');
   } catch (error) {
     console.error(error);
@@ -35,12 +35,16 @@ router.put("/:id", function (req, res, next) {
 });
 
 router.delete("/", async (req, res, next) => {
-  res.send("delete like: " + req.params.id);
+  const { likeable_entity_id } = req.body;
+  
+  Like.destroy({where: { id: likeable_entity_id }})
+    .then((result) => {
 
-
-
+    })
+    .catch((err) => {
+      console.error(err);
+      next(err);
+    })
 });
-
-
 
 module.exports = router;
