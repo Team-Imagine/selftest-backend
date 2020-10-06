@@ -19,6 +19,7 @@ const answerRouter = require("./routes/answer");
 const freshnessRouter = require("./routes/freshness");
 const likeRouter = require("./routes/like");
 const difficultyRouter = require("./routes/difficulty");
+const commentRouter = require("./routes/comment");
 
 const { sequelize } = require("./models");
 const passportConfig = require("./passport");
@@ -62,6 +63,7 @@ app.use("/answer", answerRouter);
 app.use("/freshness", freshnessRouter);
 app.use("/like", likeRouter);
 app.use("/difficulty", difficultyRouter);
+app.use("/comment", commentRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
