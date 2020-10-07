@@ -1,18 +1,35 @@
-module.exports = (sequelize, DataTypes) => {
-  return sequelize.define(
-    "likeable_entity",
-    {
-      entity_type: {
-        type: DataTypes.STRING(20),
-        allowNull: false,
-        comment: "좋아요 객체 타입",
+const Sequelize = require("sequelize");
+
+module.exports = class User extends Sequelize.Model {
+  static init(sequelize) {
+    return super.init(
+      {
+        entity_type: {
+          type: Sequelize.STRING(20),
+          allowNull: false,
+          comment: "좋아요 객체 타입",
+        },
       },
-    },
-    {
-      timestamps: true,
-      paranoid: true,
-      charset: "utf8",
-      collate: "utf8_general_ci",
-    }
-  );
+      {
+        sequelize,
+        timestamps: true,
+        paranoid: true,
+        underscored: true,
+        modelName: "LikeableEntity",
+        tableName: "likeable_entities",
+        charset: "utf8",
+        collate: "utf8_general_ci",
+      }
+    );
+  }
+  static associate(db) {
+    db.LikeableEntity.hasMany(db.Like, {
+      foreignKey: {
+        name: "likeable_entity_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+  }
 };
