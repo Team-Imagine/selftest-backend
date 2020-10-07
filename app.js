@@ -15,13 +15,20 @@ const { sequelize } = require("./models");
 const passportConfig = require("./passport");
 
 const app = express();
-sequelize.sync();
+app.set("port", process.env.PORT || 8002);
+sequelize
+  .sync({ force: false })
+  .then(() => {
+    console.log("데이터베이스 연결 성공");
+  })
+  .catch((err) => {
+    console.error(err);
+  });
 passportConfig(passport);
 
 // express variables
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
-app.set("port", process.env.PORT || 8002);
 
 app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -43,18 +50,21 @@ app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 
+// routers
 app.use("/api", apiRouter);
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
+app.use((req, res, next) => {
+  const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
+  error.status = 404;
+  next(error);
 });
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use((err, req, res, next) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
+  res.locals.error = req.app.get("env") !== "production" ? err : {};
 
   // render the error page
   res.status(err.status || 500);
