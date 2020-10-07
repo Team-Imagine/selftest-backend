@@ -18,6 +18,7 @@ router.get("/all", async (req, res, next) => {
     }
     res.status(200).json({
       success: true,
+      msg: "등록된 과목 목록 조회에 성공했습니다.",
       subjects,
     });
   } catch (error) {

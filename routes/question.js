@@ -30,7 +30,11 @@ router.get("/all", async (req, res, next) => {
         msg: "등록된 문제가 없습니다.",
       });
     }
-    res.status(200).json(questions);
+    res.status(200).json({
+      success: true,
+      msg: "등록된 문제 목록 조회에 성공했습니다.",
+      questions,
+    });
   } catch (error) {
     console.error(error);
     return res.json({
