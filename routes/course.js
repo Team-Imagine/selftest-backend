@@ -21,6 +21,7 @@ router.get("/all", async (req, res, next) => {
       courses,
     });
   } catch (error) {
+    console.error(error);
     return res.json({
       success: false,
       msg: "DB 오류",
@@ -46,9 +47,10 @@ router.get("/:id", async (req, res, next) => {
     }
     res.status(200).json(questions);
   } catch (error) {
+    console.error(error);
     return res.json({
       success: false,
-      msg: "DB 오류",
+      msg: "DB 오류 또는 강의가 존재하지 않습니다.",
     });
   }
 });
@@ -65,15 +67,17 @@ router.post("/", async (req, res, next) => {
         msg: "해당 강의 이름으로 등록된 강의가 존재합니다.",
       });
     }
-    await Course.create({
+    const course = await Course.create({
       title,
       subject_id,
     });
     return res.status(200).json({
       success: true,
       msg: "강의가 성공적으로 등록되었습니다.",
+      course,
     });
   } catch (error) {
+    console.error(error);
     return res.json({
       success: false,
       msg: "DB 오류",
