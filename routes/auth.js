@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const redis = require("redis");
 const { User } = require("../models");
+const { generateRefreshToken } = require("./middlewares");
 require("dotenv").config();
 
 const router = express.Router();
@@ -71,9 +72,7 @@ router.post("/login", async (req, res, next) => {
       };
 
       // 새로운 refresh 토큰과 해당 expiration 생성
-      let refresh_token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: req.app.get("jwt_refresh_expiration"),
-      });
+      let refresh_token = generateRefreshToken(64);
       let refresh_token_maxage = new Date() + req.app.get("jwt_refresh_expiration");
 
       // JWT 토큰 생성
