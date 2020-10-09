@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const redis = require("redis");
 const { User } = require("../models");
 require("dotenv").config();
 
@@ -45,50 +46,107 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
+// 로그인
+// 토큰을 생성하고 사용자에게 반환한다 (httpOnly cookies)
 router.post("/login", async (req, res, next) => {
   const { email, password } = req.body;
 
   // 이메일로 사용자 조회
-  const user = await User.findOne({ where: { email }, raw: true });
-  if (!user) {
-    return res.status(400).json({
-      success: false,
-      message: "해당하는 회원이 존재하지 않습니다.",
-    });
-  }
+  try {
+    const user = await User.findOne({ where: { email }, raw: true });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "해당하는 회원이 존재하지 않습니다.",
+      });
+    }
 
-  // 비밀번호 확인
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (isMatch) {
-    // 비밀번호가 일치할 경우, JWT payload 생성
-    const payload = {
-      id: user.id,
-      username: user.username,
-    };
+    // 비밀번호 확인
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      // 비밀번호가 일치할 경우, JWT payload 생성
+      const payload = {
+        id: user.id,
+        username: user.username,
+      };
 
-    // JWT 토큰 생성
-    // 1시간 동안 유효
-    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 3600 }, (err, token) => {
-      res.json({
+      // 새로운 refresh 토큰과 해당 expiration 생성
+      let refresh_token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: req.app.get("jwt_refresh_expiration"),
+      });
+      let refresh_token_maxage = new Date() + req.app.get("jwt_refresh_expiration");
+
+      // JWT 토큰 생성
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: req.app.get("jwt_expiration") });
+
+      // 브라우저 httpOnly 쿠키 설정
+      res.cookie("access_token", token, {
+        // secure: true,
+        httpOnly: true,
+      });
+      res.cookie("refresh_token", refresh_token, {
+        // secure: true,
+        httpOnly: true,
+      });
+
+      // 해당 계정 id를 key로 하여 Redis 서버에 저장
+      req.client.set(
+        user.id,
+        JSON.stringify({
+          refresh_token: refresh_token,
+          expires: refresh_token_maxage,
+        }),
+        redis.print
+      );
+
+      // 토큰 반환
+      return res.json({
         success: true,
         token: "Bearer " + token,
       });
-    });
-  } else {
-    return res.status(400).json({
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "패스워드가 일치하지 않습니다.",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
       success: false,
-      message: "패스워드가 일치하지 않습니다.",
+      message: "로그인 오류",
     });
   }
 });
 
-// TODO: 세션 사용하지 않으므로 JWT에 맞게 수정 요망 (Redis 도입 이후 추후 구현)
-// router.get("/logout", isLoggedIn, (req, res) => {
-//   req.logout();
-//   req.session.destroy();
-//   res.status(200).json({
-//     logoutSuccess: true,
-//   });
-// });
+// 로그아웃 - req.body의 id를 이용해 로그아웃
+router.post("/logout", (req, res) => {
+  // 사용자 refresh 토큰을 Redis로부터 삭제
+  req.client.del(req.body.id, (err, response) => {
+    if (response == 1) {
+      console.log("Redis로부터 사용자 refresh 토큰 삭제 성공");
+      // 브라우저로부터 httpOnly 쿠키도 삭제
+      res.clearCookie("access_token");
+      res.clearCookie("refresh_token");
+
+      res.status(200).json({
+        logoutSuccess: true,
+        message: "로그아웃 성공",
+      });
+    } else {
+      console.log("Redis로부터 사용자 refresh 토큰 삭제 실패");
+      res.status(400).json({
+        logoutSuccess: false,
+        message: "로그아웃 실패",
+      });
+    }
+  });
+});
+
+router.post("/profile", (req, res, next) => {
+  // 쿠키가 존재하고 유효한지 확인한다
+  // JWT payload를 이용해 사용자 id를 확인한다
+  // ./middlewares -> isLoggedIn과 동일
+});
 
 module.exports = router;

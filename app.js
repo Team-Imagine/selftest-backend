@@ -4,6 +4,8 @@ const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const session = require("express-session");
 const passport = require("passport");
+const redis = require("./redis_instance");
+const client = redis.getConnection();
 require("dotenv").config();
 
 // routers
@@ -28,11 +30,22 @@ passportConfig(passport);
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
 
+// JWT variables
+app.set("jwt_expiration", 60 * 10);
+app.set("jwt_refresh_expiration", 60 * 60 * 24 * 30);
+
 app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// Redis 미들웨어 - req.client로 클라이언트를 가져올 수 있음
+app.use((req, res, next) => {
+  req.client = client;
+  next();
+});
+
 app.use(
   session({
     resave: false,

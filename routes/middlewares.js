@@ -9,7 +9,7 @@ exports.isLoggedIn = async (req, res, next) => {
 
   if (req.headers.authorization) {
     // 헤더나 request.user에 토큰 존재
-    console.log(req.headers.authorization);
+    console.log("req.headers.authorization:", req.headers.authorization);
     const token = req.headers.authorization.split("Bearer ")[1] || req.user.split("Bearer ")[1];
 
     jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
@@ -47,12 +47,4 @@ exports.isLoggedIn = async (req, res, next) => {
     // 헤더에 토큰 없음
     res.status(401).json({ error: "로그인 인증 에러 - 헤더에 토큰 없음" });
   }
-};
-
-exports.cookieExtractor = (req) => {
-  var token = null;
-  if (req && req.cookies) {
-    token = req.cookies["jwt"];
-  }
-  return token;
 };
