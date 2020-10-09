@@ -1,18 +1,18 @@
 const express = require("express");
-const passport = require("passport");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { isLoggedIn, isNotLoggedIn } = require("./middlewares");
 const { User } = require("../models");
+require("dotenv").config();
 
 const router = express.Router();
 
-router.post("/join", isNotLoggedIn, async (req, res, next) => {
+router.post("/register", async (req, res, next) => {
   const { email, username, password, first_name, last_name } = req.body;
   try {
     // 동일한 이메일로 가입한 사용자가 있는지 확인
     let existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.json({
+      return res.status(400).json({
         joinSuccess: false,
         msg: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
       });
@@ -20,7 +20,7 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
 
     existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
-      return res.json({
+      return res.status(400).json({
         joinSuccess: false,
         msg: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
       });
@@ -35,6 +35,7 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
     });
     return res.status(200).json({
       joinSuccess: true,
+      msg: "가입에 성공했습니다.",
     });
   } catch (error) {
     return res.json({
@@ -44,36 +45,50 @@ router.post("/join", isNotLoggedIn, async (req, res, next) => {
   }
 });
 
-router.post("/login", isNotLoggedIn, (req, res, next) => {
-  passport.authenticate("local", (authError, user, info) => {
-    if (authError) {
-      console.error(authError);
-      return next(authError);
-    }
-    if (!user) {
-      req.flash("loginError", info.message);
-      return res.redirect("/");
-    }
-    return req.login(user, (loginError) => {
-      if (loginError) {
-        console.error(loginError);
-        return next(loginError);
-      }
-      return res.status(200).json({
-        loginSuccess: true,
-        user_id: user.id,
-        redirect: "/",
+router.post("/login", async (req, res, next) => {
+  const { email, password } = req.body;
+
+  // 이메일로 사용자 조회
+  const user = await User.findOne({ where: { email }, raw: true });
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "해당하는 회원이 존재하지 않습니다.",
+    });
+  }
+
+  // 비밀번호 확인
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (isMatch) {
+    // 비밀번호가 일치할 경우, JWT payload 생성
+    const payload = {
+      id: user.id,
+      username: user.username,
+    };
+
+    // JWT 토큰 생성
+    // 1시간 동안 유효
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 3600 }, (err, token) => {
+      res.json({
+        success: true,
+        token: "Bearer " + token,
       });
     });
-  })(req, res, next);
+  } else {
+    return res.status(400).json({
+      success: false,
+      message: "패스워드가 일치하지 않습니다.",
+    });
+  }
 });
 
-router.get("/logout", isLoggedIn, (req, res) => {
-  req.logout();
-  req.session.destroy();
-  res.status(200).json({
-    logoutSuccess: true,
-  });
-});
+// TODO: 세션 사용하지 않으므로 JWT에 맞게 수정 요망 (Redis 도입 이후 추후 구현)
+// router.get("/logout", isLoggedIn, (req, res) => {
+//   req.logout();
+//   req.session.destroy();
+//   res.status(200).json({
+//     logoutSuccess: true,
+//   });
+// });
 
 module.exports = router;

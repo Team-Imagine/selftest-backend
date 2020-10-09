@@ -1,10 +1,8 @@
-const createError = require("http-errors");
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const session = require("express-session");
-const flash = require("connect-flash");
 const passport = require("passport");
 require("dotenv").config();
 
@@ -12,7 +10,7 @@ require("dotenv").config();
 const apiRouter = require("./routes/api");
 
 const { sequelize } = require("./models");
-const passportConfig = require("./passport");
+const passportConfig = require("./config/passport");
 
 const app = express();
 app.set("port", process.env.PORT || 8002);
@@ -46,9 +44,7 @@ app.use(
     },
   })
 );
-app.use(flash());
 app.use(passport.initialize());
-app.use(passport.session());
 
 // routers
 app.use("/api", apiRouter);
