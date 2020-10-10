@@ -67,16 +67,15 @@ router.post("/login", async (req, res, next) => {
     if (isMatch) {
       // 비밀번호가 일치할 경우, JWT payload 생성
       const payload = {
-        id: user.id,
-        username: user.username,
+        uid: user.id,
       };
-
-      // 새로운 refresh 토큰과 해당 expiration 생성
-      let refresh_token = generateRefreshToken(64);
-      let refresh_token_maxage = new Date() + req.app.get("jwt_refresh_expiration");
 
       // JWT 토큰 생성
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: req.app.get("jwt_expiration") });
+
+      // 새로운 refresh 토큰과 해당 expiration 생성
+      let refresh_token = generateRefreshToken(req, user.id);
+      let refresh_token_maxage = new Date() + req.app.get("jwt_refresh_expiration");
 
       // 브라우저 httpOnly 쿠키 설정
       res.cookie("access_token", token, {
@@ -95,12 +94,12 @@ router.post("/login", async (req, res, next) => {
           refresh_token: refresh_token,
           expires: refresh_token_maxage,
         }),
-        redis.print
+        req.client.print
       );
 
       return res.json({
         success: true,
-        id: user.id,
+        uid: user.id,
         message: "로그인 성공",
       });
     } else {
@@ -121,7 +120,7 @@ router.post("/login", async (req, res, next) => {
 // 로그아웃 - req.body의 id를 이용해 로그아웃
 router.post("/logout", (req, res) => {
   // 사용자 refresh 토큰을 Redis로부터 삭제
-  req.client.del(req.body.id, (err, response) => {
+  req.client.del(req.body.uid, (err, response) => {
     if (response == 1) {
       console.log("Redis로부터 사용자 refresh 토큰 삭제 성공");
       // 브라우저로부터 httpOnly 쿠키도 삭제
