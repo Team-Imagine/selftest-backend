@@ -13,19 +13,19 @@ router.get("/all", async (req, res, next) => {
     if (courses.length == 0) {
       return res.json({
         success: false,
-        msg: "등록된 강의가 없습니다.",
+        message: "등록된 강의가 없습니다.",
       });
     }
     res.status(200).json({
       success: true,
-      msg: "등록된 강의 목록 조회에 성공했습니다.",
+      message: "등록된 강의 목록 조회에 성공했습니다.",
       courses,
     });
   } catch (error) {
     console.error(error);
     return res.json({
       success: false,
-      msg: "DB 오류",
+      message: "DB 오류",
     });
   }
 });
@@ -43,7 +43,7 @@ router.get("/:id", async (req, res, next) => {
     if (questions.length == 0) {
       return res.json({
         success: false,
-        msg: "해당 강의 id로 등록된 문제가 없습니다.",
+        message: "해당 강의 id로 등록된 문제가 없습니다.",
       });
     }
     res.status(200).json(questions);
@@ -51,7 +51,7 @@ router.get("/:id", async (req, res, next) => {
     console.error(error);
     return res.json({
       success: false,
-      msg: "DB 오류 또는 강의가 존재하지 않습니다.",
+      message: "DB 오류 또는 강의가 존재하지 않습니다.",
     });
   }
 });
@@ -65,7 +65,7 @@ router.post("/", async (req, res, next) => {
     if (existingCourse) {
       return res.json({
         success: false,
-        msg: "해당 강의 이름으로 등록된 강의가 존재합니다.",
+        message: "해당 강의 이름으로 등록된 강의가 존재합니다.",
       });
     }
     const course = await Course.create({
@@ -74,14 +74,14 @@ router.post("/", async (req, res, next) => {
     });
     return res.status(200).json({
       success: true,
-      msg: "강의가 성공적으로 등록되었습니다.",
+      message: "강의가 성공적으로 등록되었습니다.",
       course,
     });
   } catch (error) {
     console.error(error);
     return res.json({
       success: false,
-      msg: "DB 오류",
+      message: "DB 오류",
     });
   }
 });

@@ -1,7 +1,6 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const redis = require("redis");
 const { User } = require("../models");
 const { generateRefreshToken } = require("./middlewares");
 require("dotenv").config();
@@ -16,7 +15,7 @@ router.post("/register", async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({
         joinSuccess: false,
-        msg: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
+        message: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
       });
     }
 
@@ -24,7 +23,7 @@ router.post("/register", async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({
         joinSuccess: false,
-        msg: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
+        message: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
       });
     }
     const hash = await bcrypt.hash(password, 12);
@@ -37,12 +36,12 @@ router.post("/register", async (req, res, next) => {
     });
     return res.status(200).json({
       joinSuccess: true,
-      msg: "가입에 성공했습니다.",
+      message: "가입에 성공했습니다.",
     });
   } catch (error) {
     return res.json({
       joinSuccess: false,
-      msg: "DB 오류",
+      message: "DB 오류",
     });
   }
 });

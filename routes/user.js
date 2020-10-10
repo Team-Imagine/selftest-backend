@@ -9,7 +9,7 @@ router.get("/", function (req, res, next) {
 
 // users - user
 router.get("/:id", function (req, res, next) {
-  res.send("user " + req.params.id + " data" );
+  res.send("user " + req.params.id + " data");
 });
 
 router.post("/:id", function (req, res, next) {
