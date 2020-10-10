@@ -2,7 +2,6 @@ var express = require("express");
 var router = express.Router();
 
 // routers
-const indexRouter = require("./index");
 const authRouter = require("./auth");
 const userRouter = require("./user");
 const subjectRouter = require("./subject");
@@ -14,7 +13,6 @@ const likeRouter = require("./like");
 const difficultyRouter = require("./difficulty");
 const commentRouter = require("./comment");
 
-router.use("/", indexRouter);
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
 router.use("/subject", subjectRouter);
