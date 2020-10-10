@@ -4,10 +4,10 @@ module.exports = class User extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {
-        term: {
-          type: Sequelize.INTEGER,
-          defaultValue: 0,
-          comment: "제재 기간 (분)",
+        termination_date: {
+          type: Sequelize.DATE,
+          allowNull: false,
+          comment: "제재 종료 시각",
         },
         content: {
           type: Sequelize.STRING(100),
