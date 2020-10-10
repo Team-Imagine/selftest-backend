@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { PointLog, User } = require("../models"); 
+const { PointLog, User } = require("../models");
 require("dotenv").config();
 
 const isLoggedIn = async function (req, res, next) {
@@ -116,14 +116,29 @@ const generateRefreshToken = function (req, uid) {
   return refresh_token;
 };
 
+// 접속한 사용자의 id를 불러오는 함수 - 사용하려는 라우트에서 isLoggedIn이 미들웨어로 반드시 존재해야 함
+// 인증에 오류가 있을시 null 반환
+const getLoggedInUserId = async function (req, res) {
+  try {
+    await validateJwt(req, res);
+
+    // 사용자 브라우저 토큰을 가져와 접속한 사용자 id를 읽음
+    let accesstoken = req.cookies.access_token || null;
+    const decoded_uid = jwt.decode(accesstoken, process.env.JWT_SECRET).uid;
+    const user = await User.findOne({ where: { id: decoded_uid } });
+    return user.id;
+  } catch (error) {
+    return null;
+  }
+};
+
 // 유저에게 포인트를 부여하는 함수
 const givePoint = async (user_id, amount, content) => {
-
   try {
     await PointLog.create({
       amount,
       user_id,
-      content
+      content,
     });
 
     return res.json({
@@ -137,16 +152,16 @@ const givePoint = async (user_id, amount, content) => {
       message: "DB 오류",
     });
   }
-}
+};
 
 // 한 유저의 전체 포인트 로그를 열람하는 함수
 const readUserPointLog = async (user_id) => {
   try {
     let userPointLog = PointLog.findAll({
-      attributes: ["user_id", "amount", "content", "createdAt", ],
+      attributes: ["user_id", "amount", "content", "createdAt"],
       where: { user_id },
       order: [["createdAt", "DESC"]],
-    })
+    });
 
     if (userPointLog.length == 0) {
       return res.json({
@@ -159,7 +174,6 @@ const readUserPointLog = async (user_id) => {
       message: "등록된 포인트 로그 조회에 성공했습니다.",
       userPointLog,
     });
-
   } catch (error) {
     console.error(error);
     return res.json({
@@ -167,11 +181,10 @@ const readUserPointLog = async (user_id) => {
       message: "DB 오류",
     });
   }
-}
+};
 
 // 한 유저의 포인트를 열람하는 함수
 const readUserPoint = async (user_id) => {
-  
   try {
     let userPoint = User.findOne({
       attrivutes: ["point"],
@@ -183,7 +196,6 @@ const readUserPoint = async (user_id) => {
       message: "유저의 포인트 조회에 성공했습니다.",
       userPoint,
     });
-
   } catch (error) {
     console.error(error);
     return res.json({
@@ -191,11 +203,10 @@ const readUserPoint = async (user_id) => {
       message: "DB 오류",
     });
   }
-}
+};
 
 // 생성된 전체 포인트 로그 열람하는 함수
 const readTotalPointLog = async () => {
-  
   try {
     const pointLogs = await PointLog.findAll({
       attributes: ["id", "amount", "content", "createdAt", "user_id"],
@@ -222,11 +233,12 @@ const readTotalPointLog = async () => {
       message: "DB 오류",
     });
   }
-}
+};
 
 module.exports = {
   isLoggedIn,
   generateRefreshToken,
+  getLoggedInUserId,
   givePoint,
   readUserPoint,
   readUserPointLog,
