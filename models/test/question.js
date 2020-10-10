@@ -55,14 +55,14 @@ module.exports = class User extends Sequelize.Model {
     db.Question.belongsTo(db.CommentableEntity, {
       foreignKey: {
         name: "commentable_entity_id",
-        allowNull: false,
+        allowNull: true,
       },
       targetKey: "id",
     });
     db.Question.belongsTo(db.LikeableEntity, {
       foreignKey: {
         name: "likeable_entity_id",
-        allowNull: false,
+        allowNull: true,
       },
       targetKey: "id",
     });
