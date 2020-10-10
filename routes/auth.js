@@ -98,10 +98,10 @@ router.post("/login", async (req, res, next) => {
         redis.print
       );
 
-      // 토큰 반환
       return res.json({
         success: true,
-        token: "Bearer " + token,
+        id: user.id,
+        message: "로그인 성공",
       });
     } else {
       return res.status(400).json({
