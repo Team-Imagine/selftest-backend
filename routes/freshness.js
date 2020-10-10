@@ -4,51 +4,51 @@ var router = express.Router();
 const { Freshness } = require("../models");
 
 // freshness
-router.get("/", function (req, res, next) {
-  res.send("freshness list");
-});
-
-router.get("/:type", async (req, res, next) => {
-  res.send("freshness " + req.params.type + " data");
-});
 
 // CREATE // take freshness from react page & store data to db
+
 router.post("/", async (req, res, next) => {
   const { question_id, user_id, fresh } = req.body;
 
   try {
-    await Freshness.create({
+    const freshness = await Freshness.create({
       fresh,
       question_id,
       user_id,
     });
-
-    console.log('success');
+    return res.status(200).json({
+      success: true,
+      message: "신선도가 성공적으로 등록되었습니다.",
+      freshness,
+    });
   } catch (error) {
     console.error(error);
-    return next(error);
+    return res.json({
+      success: false,
+      message: "DB 오류",
+    });
   }
-});
-
-router.put("/:id", function (req, res, next) {
-  res.send("update freshness: " + req.params.id);
 });
 
 router.delete("/", async (req, res, next) => {
-  const { user_id, question_id } = req.body;
-  
-  await Freshness.destroy({where: { 
-    user_id: user_id,
-    question_id: question_id,
-  }
-  })
-    .then((result) => {
+  try {
+    const { user_id, question_id } = req.body;
 
-    })
-    .catch((err) => {
-      console.error(err);
-      next(err);
-    })
+    const result = await Freshness.destroy({ where: { user_id: user_id, question_id: question_id } });
+
+    return res.status(200).json({
+      success: true,
+      message: "문제에 대해 평가한 신선도를 삭제하는데 성공했습니다.",
+      result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
+
 });
 
 

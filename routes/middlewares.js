@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { PointLog, User } = require("../models"); 
 require("dotenv").config();
 
 const isLoggedIn = async function (req, res, next) {
@@ -115,7 +116,119 @@ const generateRefreshToken = function (req, uid) {
   return refresh_token;
 };
 
+// 유저에게 포인트를 부여하는 함수
+const givePoint = async (user_id, amount, content) => {
+
+  try {
+    await PointLog.create({
+      amount,
+      user_id,
+      content
+    });
+
+    return res.json({
+      success: true,
+      message: "포인트가 성공적으로 추가되었습니다.",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
+}
+
+// 한 유저의 전체 포인트 로그를 열람하는 함수
+const readUserPointLog = async (user_id) => {
+  try {
+    let userPointLog = PointLog.findAll({
+      attributes: ["user_id", "amount", "content", "createdAt", ],
+      where: { user_id },
+      order: [["createdAt", "DESC"]],
+    })
+
+    if (userPointLog.length == 0) {
+      return res.json({
+        success: false,
+        message: "등록된 포인트 로그가 없습니다.",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "등록된 포인트 로그 조회에 성공했습니다.",
+      userPointLog,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
+}
+
+// 한 유저의 포인트를 열람하는 함수
+const readUserPoint = async (user_id) => {
+  
+  try {
+    let userPoint = User.findOne({
+      attrivutes: ["point"],
+      where: { user_id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "유저의 포인트 조회에 성공했습니다.",
+      userPoint,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
+}
+
+// 생성된 전체 포인트 로그 열람하는 함수
+const readTotalPointLog = async () => {
+  
+  try {
+    const pointLogs = await PointLog.findAll({
+      attributes: ["id", "amount", "content", "createdAt", "user_id"],
+      where: {},
+      order: [["id", "DESC"]],
+      // limit: 10, // 10개씩 표시
+    });
+
+    if (pointLogs.length == 0) {
+      return res.json({
+        success: false,
+        message: "등록된 포인트 로그가 없습니다.",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "등록된 포인트 로그 목록 조회에 성공했습니다.",
+      pointLogs,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
+}
+
 module.exports = {
   isLoggedIn,
   generateRefreshToken,
+  givePoint,
+  readUserPoint,
+  readUserPointLog,
+  readTotalPointLog,
 };
