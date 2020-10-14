@@ -10,7 +10,6 @@ const isLoggedIn = async function (req, res, next) {
     console.error(error);
     return res.status(401).json({
       success: false,
-      validationSuccess: false,
       message: "로그인 오류: " + error,
     });
   }

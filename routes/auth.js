@@ -14,7 +14,7 @@ router.post("/register", async (req, res, next) => {
     let existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(409).json({
-        joinSuccess: false,
+        success: false,
         message: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
       });
     }
@@ -22,7 +22,7 @@ router.post("/register", async (req, res, next) => {
     existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
       return res.status(409).json({
-        joinSuccess: false,
+        success: false,
         message: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
       });
     }
@@ -35,12 +35,12 @@ router.post("/register", async (req, res, next) => {
       last_name,
     });
     return res.status(200).json({
-      joinSuccess: true,
+      success: true,
       message: "가입에 성공했습니다.",
     });
   } catch (error) {
     return res.json({
-      joinSuccess: false,
+      success: false,
       message: "DB 오류",
     });
   }
@@ -127,13 +127,13 @@ router.post("/logout", (req, res) => {
       res.clearCookie("refresh_token");
 
       res.status(200).json({
-        logoutSuccess: true,
+        success: true,
         message: "로그아웃 성공",
       });
     } else {
       console.log("Redis로부터 사용자 refresh 토큰 삭제 실패");
       res.status(400).json({
-        logoutSuccess: false,
+        success: false,
         message: "로그아웃 실패",
       });
     }
