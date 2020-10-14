@@ -13,7 +13,7 @@ router.post("/register", async (req, res, next) => {
     // 동일한 이메일로 가입한 사용자가 있는지 확인
     let existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         joinSuccess: false,
         message: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
       });
@@ -21,7 +21,7 @@ router.post("/register", async (req, res, next) => {
 
     existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         joinSuccess: false,
         message: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
       });
