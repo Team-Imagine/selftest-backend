@@ -55,7 +55,7 @@ router.post("/login", async (req, res, next) => {
   try {
     const user = await User.findOne({ where: { email }, raw: true });
     if (!user) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "해당하는 회원이 존재하지 않습니다.",
       });
@@ -102,14 +102,14 @@ router.post("/login", async (req, res, next) => {
         message: "로그인 성공",
       });
     } else {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "패스워드가 일치하지 않습니다.",
       });
     }
   } catch (error) {
     console.error(error);
-    res.status(400).json({
+    res.status(401).json({
       success: false,
       message: "로그인 오류",
     });
