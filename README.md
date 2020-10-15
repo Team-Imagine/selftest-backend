@@ -29,7 +29,7 @@ COOKIE_SECRET=selftestdevsecret
 SEQUELIZE_PASSWORD=MariaDB 루트 패스워드
 JWT_SECRET=selftesttokensecret
 REDIS_HOST=localhost
-REDIS_PASSWORD=6379
+REDIS_PORT=6379
 VERIFICATION_EMAIL=SelfTest 인증용 이메일
 VERIFICATION_EMAIL_PASSWORD=SelftTest 인증용 이메일 비밀번호
 ```
