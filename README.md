@@ -30,6 +30,8 @@ SEQUELIZE_PASSWORD=MariaDB 루트 패스워드
 JWT_SECRET=selftesttokensecret
 REDIS_HOST=localhost
 REDIS_PASSWORD=6379
+VERIFICATION_EMAIL=SelfTest 인증용 이메일
+VERIFICATION_EMAIL_PASSWORD=SelftTest 인증용 이메일 비밀번호
 ```
 
 - `MariaDB 루트 패스워드` 부분에 본인이 설정한 패스워드 입력하고 저장하면 된다.

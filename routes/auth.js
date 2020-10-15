@@ -1,8 +1,9 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { User } = require("../models");
-const { generateRefreshToken } = require("./middlewares");
+const { User, VerificationCode } = require("../models");
+const { isLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
+const sendVerificationEMail = require("./bin/send_email").sendVerificationEmail;
 require("dotenv").config();
 
 const router = express.Router();
@@ -41,7 +42,7 @@ router.post("/register", async (req, res, next) => {
   } catch (error) {
     return res.json({
       success: false,
-      message: "DB 오류",
+      message: "가입에 실패했습니다.",
     });
   }
 });
@@ -144,6 +145,121 @@ router.post("/profile", (req, res, next) => {
   // 쿠키가 존재하고 유효한지 확인한다
   // JWT payload를 이용해 사용자 id를 확인한다
   // ./middlewares -> isLoggedIn과 동일
+});
+
+// 가입 인증 이메일 발송
+router.post("/send-verification-email", isLoggedIn, async (req, res, next) => {
+  try {
+    // 로그인 검증
+    const user_id = await getLoggedInUserId(req, res); // 현재 로그인한 사용자 ID
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "로그인 되어있지 않습니다",
+      });
+    }
+
+    const user = await User.findOne({
+      where: { id: user_id },
+    });
+    const email = user.email; // 사용자 이메일
+
+    // 가입 인증이 필요할 경우에만 전송
+    if (user.verified) {
+      return res.status(400).json({
+        success: false,
+        message: "가입 인증이 이미 되어있습니다",
+      });
+    }
+    await sendVerificationEMail(email);
+
+    return res.json({
+      success: true,
+      message: "가입 인증 이메일 발송에 성공했습니다",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      message: "가입 인증 이메일 발송에 실패했습니다",
+      error: error.message,
+    });
+  }
+});
+
+// 사용자 이메일 인증 코드 대조
+// req.body에 verification_code (인증코드) 필요
+router.post("/verify-email", isLoggedIn, async (req, res, next) => {
+  const { verification_code } = req.body; // 가입 인증 코드
+
+  try {
+    // 로그인 검증
+    const user_id = await getLoggedInUserId(req, res); // 현재 로그인한 사용자 ID
+
+    // 사용자 정보 불러옴
+    const user = await User.findOne({
+      where: { id: user_id },
+      raw: true,
+    });
+
+    // 가입 인증이 필요할 경우에만 전송
+    if (user.verified) {
+      return res.status(400).json({
+        success: false,
+        message: "가입 인증이 이미 되어있습니다",
+      });
+    }
+    // 인증코드 대조
+    const verification_code_in_db = await VerificationCode.findOne({
+      where: { user_id: user_id, code: verification_code },
+      raw: true,
+    });
+
+    // 생성 시간으로부터 인증 만료 시간이 지났는지 확인
+    let expiration_time = new Date(verification_code_in_db.createdAt);
+    const DURATION_IN_MINUTES = 3; // 인증 만료 시간 3분
+    expiration_time.setMinutes(expiration_time.getMinutes() + DURATION_IN_MINUTES);
+    console.log(expiration_time);
+    console.log(new Date());
+
+    // 현재 시간과 비교
+    if (expiration_time < new Date()) {
+      // 만료시간 지난 인증 코드 삭제
+      await VerificationCode.destroy({
+        where: { id: verification_code_in_db.id },
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: "인증 만료 시간이 지났습니다. 코드를 다시 발급받으세요",
+      });
+    }
+
+    if (verification_code_in_db) {
+      // 인증 코드 삭제
+      await VerificationCode.destroy({
+        where: { id: verification_code_in_db.id },
+      });
+
+      // 사용자 정보 업데이트
+      await User.update({ verified: true }, { where: { id: user_id } });
+
+      return res.json({
+        success: true,
+        message: "인증 코드가 일치합니다. 이메일 인증에 성공했습니다",
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "가입 인증에 실패했습니다. 인증 코드를 다시 확인해주세요.",
+      });
+    }
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "가입 인증에 실패했습니다",
+    });
+  }
 });
 
 module.exports = router;

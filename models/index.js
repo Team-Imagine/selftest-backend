@@ -17,6 +17,7 @@ const Comment = require("./comment/comment");
 const PointLog = require("./user/point_log");
 const PenaltyLog = require("./user/penalty_log");
 const Attendance = require("./user/attendance");
+const VerificationCode = require("./user/verification_code");
 
 const env = process.env.NODE_ENV || "development";
 const config = require("../config/config")[env];
@@ -42,6 +43,7 @@ db.Comment = Comment;
 db.PointLog = PointLog;
 db.PenaltyLog = PenaltyLog;
 db.Attendance = Attendance;
+db.VerificationCode = VerificationCode;
 
 User.init(sequelize);
 Question.init(sequelize);
@@ -60,6 +62,7 @@ Comment.init(sequelize);
 PointLog.init(sequelize);
 PenaltyLog.init(sequelize);
 Attendance.init(sequelize);
+VerificationCode.init(sequelize);
 
 User.associate(db);
 Question.associate(db);
@@ -78,5 +81,6 @@ Comment.associate(db);
 PointLog.associate(db);
 PenaltyLog.associate(db);
 Attendance.associate(db);
+VerificationCode.associate(db);
 
 module.exports = db;

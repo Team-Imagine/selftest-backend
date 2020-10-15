@@ -46,6 +46,12 @@ module.exports = class User extends Sequelize.Model {
           defaultValue: true,
           comment: "상태",
         },
+        verified: {
+          type: Sequelize.TINYINT,
+          allowNull: false,
+          defaultValue: false,
+          comment: "이메일 인증 여부",
+        },
       },
       {
         sequelize,
