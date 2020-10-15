@@ -1,11 +1,13 @@
 const nodemailer = require("nodemailer");
 const pug = require("pug");
 const path = require("path");
+const crypto = require("crypto");
+const { VerificationCode, User } = require("../../models");
 require("dotenv").config();
 
 // 매개변수로 주어진 이메일로 가입 인증 코드 이메일을 보내는 함수
 // user_email: 인증 코드를 전송할 사용자 이메일
-const sendVerificationEmail = function (user_email) {
+const sendVerificationEmail = async function (user_email) {
   // 메일 발송 객체 생성
   let transporter = nodemailer.createTransport({
     service: "gmail",
@@ -15,10 +17,37 @@ const sendVerificationEmail = function (user_email) {
     },
   });
 
-  // 인증 코드
-  const verification_code = 12345;
+  // 해당 이메일을 가진 사용자가 존재하는지 확인
+  const user = await User.findOne({
+    where: { email: user_email },
+  });
 
-  // TODO: verification 반환하지 않고 DB에 저장할 것
+  if (!user) {
+    throw new Error("해당 이메일을 가진 사용자가 존재하지 않습니다");
+  }
+
+  // 인증 코드가 이미 존재하는지 확인
+  const existingVerificationCode = await VerificationCode.findOne({
+    where: { user_id: user.id },
+  });
+
+  // 인증코드 이미 존재한다면 삭제
+  if (existingVerificationCode) {
+    await VerificationCode.destroy({
+      where: { id: existingVerificationCode.id },
+    });
+  }
+
+  // 인증코드 발급
+  const key_one = crypto.randomBytes(256).toString("hex").substr(100, 5);
+  const key_two = crypto.randomBytes(256).toString("base64").substr(50, 5);
+  const verification_code = key_one + key_two;
+
+  // 발급받은 인증코드는 나중에 대조하기 위해 DB에 저장
+  await VerificationCode.create({
+    user_id: user.id,
+    code: verification_code,
+  });
 
   // 메일 옵션 설정
   let mailOptions = {
