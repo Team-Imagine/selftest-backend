@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   Question,
+  User,
   Answer,
   LikeableEntity,
   CommentableEntity,
@@ -11,36 +12,41 @@ const {
   Freshness,
   Bookmark,
   TestQuestion,
+  Course,
 } = require("../models");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 
-// 전체 문제 리스트를 불러옴
-router.get("/all", async (req, res, next) => {
+// 페이지네이션을 이용해 문제 리스트를 불러옴
+router.get("/", async (req, res, next) => {
   try {
+    // 쿼리 기본값
+    let page = req.query.page || 0;
+    let per_page = req.query.per_page || 10;
+
     // 비활성화되지 않은 문제만 불러옴
     const questions = await Question.findAll({
-      attributes: ["id", "content", "createdAt", "course_id", "user_id", "commentable_entity_id", "likeable_entity_id"],
-      where: { blocked: false },
-      order: [["id", "DESC"]],
-      // limit: 10, // 10개씩 표시
+      attributes: ["id", "content", "createdAt"],
+      where: {
+        blocked: false,
+      },
+      include: [
+        { model: User, attributes: ["username"] },
+        { model: Course, attributes: ["title"] },
+      ],
+      offset: +page - 1,
+      limit: +per_page,
     });
 
-    if (questions.length == 0) {
-      return res.json({
-        success: false,
-        message: "등록된 문제가 없습니다.",
-      });
-    }
-    res.status(200).json({
+    return res.json({
       success: true,
-      message: "등록된 문제 목록 조회에 성공했습니다.",
+      message: "등록된 문제 목록 조회에 성공했습니다",
       questions,
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
-      message: "DB 오류",
+      message: "요청 오류",
     });
   }
 });
