@@ -16,7 +16,7 @@ router.post("/register", async (req, res, next) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: "이미 동일한 이메일로 가입한 사용자가 존재합니다.",
+        message: "이미 동일한 이메일로 가입한 사용자가 존재합니다",
       });
     }
 
@@ -24,7 +24,7 @@ router.post("/register", async (req, res, next) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다.",
+        message: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다",
       });
     }
     const hash = await bcrypt.hash(password, 12);
@@ -37,12 +37,12 @@ router.post("/register", async (req, res, next) => {
     });
     return res.status(200).json({
       success: true,
-      message: "가입에 성공했습니다.",
+      message: "가입에 성공했습니다",
     });
   } catch (error) {
     return res.json({
       success: false,
-      message: "가입에 실패했습니다.",
+      message: "가입에 실패했습니다",
     });
   }
 });
@@ -58,7 +58,7 @@ router.post("/login", async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "해당하는 회원이 존재하지 않습니다.",
+        message: "해당하는 회원이 존재하지 않습니다",
       });
     }
 
@@ -105,7 +105,7 @@ router.post("/login", async (req, res, next) => {
     } else {
       return res.status(401).json({
         success: false,
-        message: "패스워드가 일치하지 않습니다.",
+        message: "패스워드가 일치하지 않습니다",
       });
     }
   } catch (error) {
@@ -251,7 +251,7 @@ router.post("/verify-email", isLoggedIn, async (req, res, next) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: "가입 인증에 실패했습니다. 인증 코드를 다시 확인해주세요.",
+        message: "가입 인증에 실패했습니다. 인증 코드를 다시 확인해주세요",
       });
     }
   } catch (error) {

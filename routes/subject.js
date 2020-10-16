@@ -13,12 +13,12 @@ router.get("/all", async (req, res, next) => {
     if (subjects.length == 0) {
       return res.json({
         success: false,
-        message: "등록된 과목이 없습니다.",
+        message: "등록된 과목이 없습니다",
       });
     }
     res.status(200).json({
       success: true,
-      message: "등록된 과목 목록 조회에 성공했습니다.",
+      message: "등록된 과목 목록 조회에 성공했습니다",
       subjects,
     });
   } catch (error) {
@@ -42,7 +42,7 @@ router.get("/:id", async (req, res, next) => {
     if (courses.length == 0) {
       return res.json({
         success: false,
-        message: "해당 과목 id로 등록된 강의가 없습니다.",
+        message: "해당 과목 id로 등록된 강의가 없습니다",
       });
     }
     res.status(200).json(questions);
@@ -50,7 +50,7 @@ router.get("/:id", async (req, res, next) => {
     console.error(error);
     return res.json({
       success: false,
-      message: "DB 오류 또는 과목이 존재하지 않습니다.",
+      message: "DB 오류 또는 과목이 존재하지 않습니다",
     });
   }
 });
@@ -64,7 +64,7 @@ router.post("/", async (req, res, next) => {
     if (existingSubject) {
       return res.json({
         success: false,
-        message: "해당 과목 이름으로 등록된 과목이 존재합니다.",
+        message: "해당 과목 이름으로 등록된 과목이 존재합니다",
       });
     }
     const subject = await Subject.create({
@@ -72,7 +72,7 @@ router.post("/", async (req, res, next) => {
     });
     return res.status(200).json({
       success: true,
-      message: "과목이 성공적으로 등록되었습니다.",
+      message: "과목이 성공적으로 등록되었습니다",
       subject,
     });
   } catch (error) {

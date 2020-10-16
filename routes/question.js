@@ -65,7 +65,7 @@ router.get("/:id", async (req, res, next) => {
     console.error(error);
     return res.json({
       success: false,
-      message: "해당 id에 해당하는 문제가 존재하지 않습니다.",
+      message: "해당 id에 해당하는 문제가 존재하지 않습니다",
     });
   }
 });
@@ -102,8 +102,8 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     return res.json({
       success: true,
-      message: "문제가 성공적으로 등록되었습니다.",
-      question: { id: question.id, content, course_id, user_id },
+      message: "문제가 성공적으로 등록되었습니다",
+      question: { id: question.id },
     });
   } catch (error) {
     console.error(error);
@@ -132,13 +132,13 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
     await Question.update({ content: req.body.content }, { where: { id: req.params.id } });
     return res.status(200).json({
       success: true,
-      message: "문제 내용을 성공적으로 갱신했습니다.",
+      message: "문제 내용을 성공적으로 갱신했습니다",
     });
   } catch (error) {
     console.error(error);
     return res.json({
       success: false,
-      message: "해당 id를 가진 문제가 존재하지 않습니다.",
+      message: "해당 id를 가진 문제가 존재하지 않습니다",
     });
   }
 });
@@ -196,14 +196,14 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "문제 및 문제에 관련된 정보를 일괄 삭제하는 데 성공했습니다.",
+      message: "문제 및 문제에 관련된 정보를 일괄 삭제하는 데 성공했습니다",
       result,
     });
   } catch (error) {
     console.error(error);
     return res.json({
       success: false,
-      message: "해당 id를 가진 문제가 존재하지 않습니다.",
+      message: "해당 id를 가진 문제가 존재하지 않습니다",
     });
   }
 });
