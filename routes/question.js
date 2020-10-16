@@ -116,6 +116,8 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
 // 문제 id에 해당하는 문제 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
+  const { id } = req.params;
+  const { content } = req.body;
   try {
     // 접속한 사용자의 id를 받아옴
     const user_id = await getLoggedInUserId(req, res);
