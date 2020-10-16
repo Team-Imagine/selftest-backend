@@ -81,6 +81,14 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     // 접속한 사용자의 id를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
+    // TODO: 수정할 문제 내용이 존재하는지 확인
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        message: "수정할 문제 내용이 부족합니다",
+      });
+    }
+
     // 문제 생성
     const question = await Question.create({
       content,
@@ -131,7 +139,15 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    await Question.update({ content: req.body.content }, { where: { id: req.params.id } });
+    // TODO: 수정할 문제 내용이 존재하는지 확인
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        message: "수정할 문제 내용이 부족합니다",
+      });
+    }
+
+    await Question.update({ content }, { where: { id } });
     return res.status(200).json({
       success: true,
       message: "문제 내용을 성공적으로 갱신했습니다",
