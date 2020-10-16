@@ -55,8 +55,24 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const question = await Question.findOne({
-      where: { id: req.params.id },
+      attributes: ["id", "content", "createdAt"],
+      where: {
+        id: req.params.id,
+        blocked: false,
+      },
+      include: [
+        { model: User, attributes: ["username"] },
+        { model: Course, attributes: ["title"] },
+      ],
     });
+
+    if (!question) {
+      return res.json({
+        success: false,
+        message: "해당 id에 해당하는 문제가 존재하지 않습니다",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       question,
