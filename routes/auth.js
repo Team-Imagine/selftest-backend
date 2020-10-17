@@ -40,7 +40,7 @@ router.post("/register", async (req, res, next) => {
       message: "가입에 성공했습니다",
     });
   } catch (error) {
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "가입에 실패했습니다",
     });
