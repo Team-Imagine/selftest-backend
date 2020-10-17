@@ -23,7 +23,26 @@ router.post("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
+    return res.status(400).json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
+});
+
+router.post("/total", async (req, res, next) => {
+  const { question_id } = req.body;
+  try {
+    let result = await totalFresh(question_id);
+
+    console.log(result);
     return res.json({
+      success: true,
+      message: "성공",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });
@@ -43,7 +62,7 @@ router.delete("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });

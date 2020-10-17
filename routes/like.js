@@ -1,6 +1,8 @@
 var express = require("express");
 var router = express.Router();
 
+// const { totalLike, totalDislike, totalFinalLike, givePenalty } = require("./middlewares");
+
 const { Like } = require("../models");
 
 
@@ -18,14 +20,34 @@ router.get("/:likeable_entity_id", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "해당 문제에 해당하는 Like가 존재하지 않습니다.",
     });
   }
 });
 
-// CREATE // take like from react page & store data to db
+/*
+router.post("/test", async (req, res, next) => {
+  //const { user_id, content } = req.body;
+  try {
+    await givePenalty(req, res);
+
+    return res.json({
+      success: true,
+      message: "성공",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
+});
+*/
+
+// CREATE
 router.post("/", async (req, res, next) => {
   const { good, likeable_entity_id, user_id } = req.body;
 
@@ -42,7 +64,7 @@ router.post("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });
@@ -50,19 +72,23 @@ router.post("/", async (req, res, next) => {
 });
 
 router.delete("/", async (req, res, next) => {
-  const { likeable_entity_id } = req.body;
+  const { likeable_entity_id, user_id } = req.body;
 
-  await Like.destroy({ where: { id: likeable_entity_id } })
-    .then((result) => {
+  try {
+    const result = await Like.destroy({ where: { user_id: user_id, likeable_entity_id: likeable_entity_id } });
 
-    })
-    .catch((error) => {
-      console.error(error);
-      return res.json({
-        success: false,
-        message: "DB 오류",
-      });
-    })
+    return res.status(200).json({
+      success: true,
+      message: "문제에 대해 평가한 좋아요를 삭제하는데 성공했습니다.",
+      result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
 });
 
 module.exports = router;

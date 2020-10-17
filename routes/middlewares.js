@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { PointLog, User } = require("../models");
+const { PointLog, User, Freshness, Like, Difficulty, PenaltyLog } = require("../models");
 require("dotenv").config();
 
 const isLoggedIn = async function (req, res, next) {
@@ -131,8 +131,159 @@ const getLoggedInUserId = async function (req, res) {
   }
 };
 
+// 항목에 부여된 좋아요 점수를 합산하는 함수
+const totalLike = async (likeable_entity_id) => {
+  try {
+    let likes = await Like.count({
+      where: { likeable_entity_id, good: true },
+    });
+    
+    return likes;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+// 항목에 부여된 싫어요 점수를 합산하는 함수
+const totalDislike = async (likeable_entity_id) => {
+  try {
+    let dislikes = await Like.count({
+      where: { likeable_entity_id, good: false },
+    });
+    
+    return dislikes;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+// 항목에 부여된 좋아요, 싫어요 점수를 합산하는 함수
+const totalFinalLike = async (likeable_entity_id) => {
+  try {
+    let likes = await totalLike(likeable_entity_id);
+
+    console.log('likes:', likes);
+    let dislikes = await totalDislike(likeable_entity_id);
+    console.log('dislikes:', dislikes);
+    return likes - dislikes;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+// 문제의 블라인드 처리를 정하는 함수 
+const questionBlocked = async (question_id, likeable_entity_id) => {
+  try {
+    let likes = await totalLike(likeable_entity_id);
+
+    let dislikes = await totalDislike(likeable_entity_id);
+    
+    // 블라인드 조건: 싫어요 20개 이상 & 싫어요 / 좋아요  2 이상  
+    if(dislikes >= 20 && dislikes / likes > 2) {  
+      await Question.update({ blocked: true }, {
+        where: {
+          question_id: question_id,
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+} 
+
+// 문제에 부여된 신선도 점수를 합산하는 함수
+const totalFresh = async (question_id) => {
+  try {
+    let freshnesses = await Freshness.count({
+      where: { question_id, fresh: true },
+    });
+
+    return freshnesses;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+// 문제에 부여된 !신선도 점수를 합산하는 함수
+const totalStale = async (question_id) => {
+  try {
+    let stalenesses = await Freshness.count({
+      where: { question_id, fresh: false },
+    });
+
+    return stalenesses;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+// 문제에 부여된 신선도, !신선도 점수를 합산하는 함수
+const totalFinalFresh = async (question_id) => {
+  try {
+    let freshness = await totalFresh(question_id);
+
+    let stalenesses = await totalStale(question_id);
+
+    return freshness - stalenesses;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+// 문제의 난이도의 평균을 산출하는 함수
+const averageDifficulty = async(question_id) => {
+  try {
+    let difficulties = await Difficulty.sum("score", {
+      where: { question_id },
+    }) / await Difficulty.count("score", {
+      where: { question_id },
+    })
+
+    return difficulties;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+// 유저에게 패널티를 부여하는 함수
+const givePenalty = async (req, res) => {
+  const { user_id, content } = req.body;
+
+  let termination_date = new Date();
+  
+  termination_date.setDate(termination_date.getDate() + 23);
+
+  console.log('123');
+  try {
+    await PenaltyLog.create({
+      termination_date,
+      content,
+      user_id,
+    })
+
+    await User.update({ active: false }, {
+      where: {
+        id: user_id,
+      }
+    })
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 // 유저에게 포인트를 부여하는 함수
-const givePoint = async (user_id, amount, content) => {
+const givePoint = async (req, res) => {
+  const { user_id, amount, content } = req.body;
+
   try {
     await PointLog.create({
       amount,
@@ -146,7 +297,7 @@ const givePoint = async (user_id, amount, content) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });
@@ -154,9 +305,11 @@ const givePoint = async (user_id, amount, content) => {
 };
 
 // 한 유저의 전체 포인트 로그를 열람하는 함수
-const readUserPointLog = async (user_id) => {
+const readUserPointLog = async (req, res) => {
+  const { user_id } = req.body;
+
   try {
-    let userPointLog = PointLog.findAll({
+    let userPointLog = await PointLog.findAll({
       attributes: ["user_id", "amount", "content", "createdAt"],
       where: { user_id },
       order: [["createdAt", "DESC"]],
@@ -183,9 +336,11 @@ const readUserPointLog = async (user_id) => {
 };
 
 // 한 유저의 포인트를 열람하는 함수
-const readUserPoint = async (user_id) => {
+const readUserPoint = async (req, res) => {
+  const { user_id } = req.body;
+
   try {
-    let userPoint = User.findOne({
+    let userPoint = await User.findOne({
       attrivutes: ["point"],
       where: { user_id },
     });
@@ -197,7 +352,7 @@ const readUserPoint = async (user_id) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });
@@ -205,13 +360,13 @@ const readUserPoint = async (user_id) => {
 };
 
 // 생성된 전체 포인트 로그 열람하는 함수
-const readTotalPointLog = async () => {
+const readTotalPointLog = async (req, res) => {
   try {
     const pointLogs = await PointLog.findAll({
       attributes: ["id", "amount", "content", "createdAt", "user_id"],
       where: {},
       order: [["id", "DESC"]],
-      // limit: 10, // 10개씩 표시
+      limit: 10, // 10개씩 표시
     });
 
     if (pointLogs.length == 0) {
@@ -227,7 +382,7 @@ const readTotalPointLog = async () => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });
@@ -242,4 +397,13 @@ module.exports = {
   readUserPoint,
   readUserPointLog,
   readTotalPointLog,
+  totalLike,
+  totalDislike,
+  totalFinalLike,
+  totalFresh,
+  totalStale,
+  totalFinalFresh,
+  averageDifficulty,
+  givePenalty,
+  questionBlocked,
 };
