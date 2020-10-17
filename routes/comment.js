@@ -65,13 +65,13 @@ router.get("/:user_id", async (req, res, next) => {
 
 // CREATE // take comment from react page & store data to db
 router.post("/", async (req, res, next) => {
-  const { content, commentable_entity_id, user_id} = req.body;
+  const { content, user_id, commentable_entity_id} = req.body;
 
   try {
-    await comment.create({
+    await Comment.create({
       content,
-      commentable_entity_id,
       user_id,
+      commentable_entity_id,
     });
     
     return res.json({
@@ -80,7 +80,7 @@ router.post("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });
@@ -98,7 +98,7 @@ router.put("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "해당 id를 가진 comment가 존재하지 않습니다.",
     });
@@ -116,7 +116,7 @@ router.delete("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "해당 id를 가진 comment가 존재하지 않습니다.",
     });

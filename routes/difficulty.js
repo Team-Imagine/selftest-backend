@@ -20,7 +20,7 @@ router.post("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "DB 오류",
     });
@@ -38,7 +38,7 @@ router.put("/", async (req, res, next) => {
   })
 } catch (error) {
   console.error(error);
-  return res.json({
+  return res.status(400).json({
     success: false,
     message: "DB 오류",
   });
@@ -46,23 +46,23 @@ router.put("/", async (req, res, next) => {
 });
 
 router.delete("/", async (req, res, next) => {
-  const { user_id, question_id } = req.body;
+  const { question_id, user_id } = req.body;
 
-  await Difficulty.destroy({
-    where: {
-      user_id: user_id,
-      question_id: question_id,
-    }
-  })
-    .then((result) => {
+  try {
+    const result = await Difficulty.destroy({ where: { user_id: user_id, question_id: question_id } });
 
-    })
-    .catch((err) => {
-      console.error(err);
-      next(err);
-    })
+    return res.status(200).json({
+      success: true,
+      message: "문제에 대해 평가한 난이도를 삭제하는데 성공했습니다.",
+      result,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
 });
-
-
 
 module.exports = router;
