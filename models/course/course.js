@@ -16,7 +16,7 @@ module.exports = class Course extends Sequelize.Model {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        modelName: "Course",
+        modelName: "course",
         tableName: "courses",
         charset: "utf8",
         collate: "utf8_general_ci",

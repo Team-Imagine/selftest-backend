@@ -15,7 +15,7 @@ module.exports = class LikeableEntity extends Sequelize.Model {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        modelName: "LikeableEntity",
+        modelName: "likeable_entity",
         tableName: "likeable_entities",
         charset: "utf8",
         collate: "utf8_general_ci",

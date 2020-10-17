@@ -22,7 +22,7 @@ module.exports = class Question extends Sequelize.Model {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        modelName: "Question",
+        modelName: "question",
         tableName: "questions",
         charset: "utf8",
         collate: "utf8_general_ci",

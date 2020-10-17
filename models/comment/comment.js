@@ -15,7 +15,7 @@ module.exports = class Comment extends Sequelize.Model {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        modelName: "Comment",
+        modelName: "comment",
         tableName: "comments",
         charset: "utf8",
         collate: "utf8_general_ci",

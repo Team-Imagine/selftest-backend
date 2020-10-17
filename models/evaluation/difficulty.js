@@ -14,7 +14,7 @@ module.exports = class Difficulty extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "Difficulty",
+        modelName: "difficulty",
         tableName: "difficulties",
         charset: "utf8",
         collate: "utf8_general_ci",

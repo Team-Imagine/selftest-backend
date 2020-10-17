@@ -16,7 +16,7 @@ module.exports = class Subject extends Sequelize.Model {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        modelName: "Subject",
+        modelName: "subject",
         tableName: "subjects",
         charset: "utf8",
         collate: "utf8_general_ci",

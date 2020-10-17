@@ -19,7 +19,7 @@ module.exports = class PenaltyLog extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "PenaltyLog",
+        modelName: "penalty_log",
         tableName: "penalty_logs",
         charset: "utf8",
         collate: "utf8_general_ci",

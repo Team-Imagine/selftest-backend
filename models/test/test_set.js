@@ -8,7 +8,7 @@ module.exports = class TestSet extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "TestSet",
+        modelName: "test_set",
         tableName: "test_sets",
         charset: "utf8",
         collate: "utf8_general_ci",

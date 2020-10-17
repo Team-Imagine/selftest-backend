@@ -14,7 +14,7 @@ module.exports = class Like extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "Like",
+        modelName: "like",
         tableName: "likes",
         charset: "utf8",
         collate: "utf8_general_ci",
