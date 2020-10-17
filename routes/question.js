@@ -109,7 +109,7 @@ router.get("/:id", async (req, res, next) => {
 
 // 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  const { content, course_id } = req.body;
+  const { content, course_title } = req.body;
   try {
     // 동일하거나 유사한 문제가 있는 경우
     // TODO: 동일하거나 유사한 문제 존재시 중복문제 또는 복수정답 처리
@@ -117,6 +117,15 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     // 접속한 사용자의 id를 받아옴
     const user_id = await getLoggedInUserId(req, res);
+
+    // 주어진 강의 이름에 해당하는 강의가 존재하는지 확인
+    const course = await Course.findOne({ where: { title: course_title } });
+    if (!course) {
+      return res.json({
+        success: false,
+        message: "해당 과목 이름에 해당하는 과목이 존재하지 않습니다",
+      });
+    }
 
     // TODO: 수정할 문제 내용이 존재하는지 확인
     if (!content) {
@@ -129,7 +138,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     // 문제 생성
     const question = await Question.create({
       content,
-      course_id,
+      course_id: course.id,
       user_id,
     });
 
