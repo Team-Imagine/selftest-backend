@@ -19,7 +19,7 @@ module.exports = class PointLog extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "PointLog",
+        modelName: "point_log",
         tableName: "point_logs",
         charset: "utf8",
         collate: "utf8_general_ci",

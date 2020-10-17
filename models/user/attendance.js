@@ -8,7 +8,7 @@ module.exports = class Attendance extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "Attendance",
+        modelName: "attendance",
         tableName: "attendances",
         charset: "utf8",
         collate: "utf8_general_ci",

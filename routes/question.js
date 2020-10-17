@@ -20,11 +20,11 @@ const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 router.get("/", async (req, res, next) => {
   try {
     // 쿼리 기본값
-    let page = req.query.page || 0;
+    let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
+    let course_title = req.query.course_title;
 
-    // 비활성화되지 않은 문제만 불러옴
-    const questions = await Question.findAll({
+    let queryOptions = {
       attributes: ["id", "content", "createdAt"],
       where: {
         blocked: false,
@@ -35,7 +35,27 @@ router.get("/", async (req, res, next) => {
       ],
       offset: +page - 1,
       limit: +per_page,
-    });
+    };
+
+    // 강의 이름을 전달받았다면 강의 이름으로 검색
+    if (course_title) {
+      const course = await Course.findOne({
+        attributes: ["id", "title"],
+        where: { title: course_title },
+      });
+
+      if (!course) {
+        return res.status(400).json({
+          success: false,
+          message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다.",
+        });
+      }
+      queryOptions.where.course_id = course.id;
+    }
+
+    // 비활성화되지 않은 문제만 불러옴
+    // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
+    const questions = await Question.findAll(queryOptions);
 
     return res.json({
       success: true,
@@ -54,6 +74,7 @@ router.get("/", async (req, res, next) => {
 // 문제 id에 따른 문제 정보를 가져옴
 router.get("/:id", async (req, res, next) => {
   try {
+    // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const question = await Question.findOne({
       attributes: ["id", "content", "createdAt"],
       where: {
@@ -133,7 +154,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     console.error(error);
     return res.json({
       success: false,
-      message: "DB 오류",
+      message: "문제를 등록하는 데 실패했습니다",
     });
   }
 });
@@ -186,7 +207,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     // 접속한 사용자의 id와 query에 있는 문제의 user_id룰 를 대조
     const question = await Question.findOne({ where: { id: req.params.id }, raw: true });
     if (question.user_id !== user_id) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "자신이 업로드한 문제만 삭제할 수 있습니다",
       });
@@ -231,6 +252,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "문제 및 문제에 관련된 정보를 일괄 삭제하는 데 성공했습니다",
+      question: { id: req.params.id },
       result,
     });
   } catch (error) {

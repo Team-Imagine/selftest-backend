@@ -8,7 +8,7 @@ module.exports = class Bookmark extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "Bookmark",
+        modelName: "bookmark",
         tableName: "bookmarks",
         charset: "utf8",
         collate: "utf8_general_ci",

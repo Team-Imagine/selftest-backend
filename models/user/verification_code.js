@@ -15,7 +15,7 @@ module.exports = class VerificationCode extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "VerificationCode",
+        modelName: "verification_code",
         tableName: "verification_codes",
         charset: "utf8",
         collate: "utf8_general_ci",

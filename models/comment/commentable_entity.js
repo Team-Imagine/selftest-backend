@@ -15,7 +15,7 @@ module.exports = class CommentableEntity extends Sequelize.Model {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        modelName: "CommentableEntity",
+        modelName: "commentable_entity",
         tableName: "commentable_entities",
         charset: "utf8",
         collate: "utf8_general_ci",
