@@ -154,7 +154,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     console.error(error);
     return res.json({
       success: false,
-      message: "DB 오류",
+      message: "문제를 등록하는 데 실패했습니다",
     });
   }
 });
@@ -207,7 +207,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     // 접속한 사용자의 id와 query에 있는 문제의 user_id룰 를 대조
     const question = await Question.findOne({ where: { id: req.params.id }, raw: true });
     if (question.user_id !== user_id) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "자신이 업로드한 문제만 삭제할 수 있습니다",
       });
@@ -252,6 +252,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "문제 및 문제에 관련된 정보를 일괄 삭제하는 데 성공했습니다",
+      question: { id: req.params.id },
       result,
     });
   } catch (error) {
