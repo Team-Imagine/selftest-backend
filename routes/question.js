@@ -50,7 +50,6 @@ router.get("/", async (req, res, next) => {
           message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다.",
         });
       }
-      console.log(course.id);
       queryOptions.where.course_id = course.id;
     }
 
