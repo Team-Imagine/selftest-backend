@@ -49,7 +49,7 @@ router.get("/:title", async (req, res, next) => {
     if (!subject) {
       return res.json({
         success: false,
-        message: "해당 과목이 존재하지 않습니다",
+        message: "해당 과목 이름으로 등록된 과목이 존재하지 않습니다",
       });
     }
     return res.status(200).json({
@@ -84,13 +84,15 @@ router.post("/", async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "과목이 성공적으로 등록되었습니다",
-      subject,
+      subject: {
+        title: title,
+      },
     });
   } catch (error) {
     console.error(error);
     return res.json({
       success: false,
-      message: "DB 오류",
+      message: "요청 오류",
     });
   }
 });

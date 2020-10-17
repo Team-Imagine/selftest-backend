@@ -88,7 +88,7 @@ router.get("/:title", async (req, res, next) => {
 
 // 새로운 강의를 등록
 router.post("/", async (req, res, next) => {
-  const { title, subject_id } = req.body;
+  const { title, subject_title } = req.body;
   try {
     // 동일한 강의 이름을 가진 강의가 있는지 확인
     const existingCourse = await Course.findOne({ where: { title } });
@@ -98,20 +98,34 @@ router.post("/", async (req, res, next) => {
         message: "해당 강의 이름으로 등록된 강의가 존재합니다",
       });
     }
+
+    const subject = await Subject.findOne({ where: { title: subject_title } });
+    if (!subject) {
+      return res.json({
+        success: false,
+        message: "해당 과목 이름으로 등록된 과목이 존재하지 않습니다",
+      });
+    }
+
     const course = await Course.create({
       title,
-      subject_id,
+      subject_id: subject.id,
     });
     return res.status(200).json({
       success: true,
       message: "강의가 성공적으로 등록되었습니다",
-      course,
+      course: {
+        title: course.title,
+        subject: {
+          title: subject_title,
+        },
+      },
     });
   } catch (error) {
     console.error(error);
     return res.json({
       success: false,
-      message: "DB 오류",
+      message: "요청 오류",
     });
   }
 });
