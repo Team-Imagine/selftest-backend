@@ -31,7 +31,7 @@ router.get("/", async (req, res, next) => {
     console.error(error);
     return res.json({
       success: false,
-      message: "DB 오류",
+      message: "요청 오류",
     });
   }
 });
@@ -61,7 +61,7 @@ router.get("/:title", async (req, res, next) => {
     console.error(error);
     return res.json({
       success: false,
-      message: "DB 오류 또는 과목이 존재하지 않습니다",
+      message: "요청 오류",
     });
   }
 });
