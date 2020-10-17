@@ -1,13 +1,20 @@
 var express = require("express");
 var router = express.Router();
-const { Course } = require("../models");
+const { Subject, Course } = require("../models");
 
-// 모든 강의 리스트를 불러옴
-router.get("/all", async (req, res, next) => {
+// 페이지네이션을 이용해 강의 리스트를 불러옴
+router.get("/", async (req, res, next) => {
   try {
+    // 쿼리 기본값
+    let page = req.query.page || 1;
+    let per_page = req.query.per_page || 10;
+
     const courses = await Course.findAll({
-      attributes: ["id", "title", "subject_id"],
-      order: [["id", "DESC"]],
+      attributes: ["title"],
+      include: [{ model: Subject, attributes: ["title"] }],
+      order: [["title", "DESC"]],
+      offset: +page - 1,
+      limit: +per_page,
     });
 
     if (courses.length == 0) {
@@ -16,7 +23,7 @@ router.get("/all", async (req, res, next) => {
         message: "등록된 강의가 없습니다",
       });
     }
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "등록된 강의 목록 조회에 성공했습니다",
       courses,
@@ -30,23 +37,27 @@ router.get("/all", async (req, res, next) => {
   }
 });
 
-// 해당 강의 id에 해당하는 모든 문제를 불러옴
-router.get("/:id", async (req, res, next) => {
+// 해당 강의 이름에 해당하는 강의를 불러옴
+router.get("/:title", async (req, res, next) => {
   try {
-    // 비활성화되지 않은 문제만 불러옴
-    const questions = await Question.findAll({
-      attributes: ["id", "content", "createdAt", "course_id", "user_id", "commentable_entity_id", "likeable_entity_id"],
-      where: { blocked: false, course_id: req.params.id },
-      order: [["id", "DESC"]],
+    const course = await Course.findOne({
+      attributes: ["title"],
+      where: { title: req.params.title },
+      include: [{ model: Subject, attributes: ["title"] }],
+      order: [["title", "DESC"]],
     });
 
-    if (questions.length == 0) {
+    if (!course) {
       return res.json({
         success: false,
-        message: "해당 강의 id로 등록된 문제가 없습니다",
+        message: "해당 강의가 존재하지 않습니다",
       });
     }
-    res.status(200).json(questions);
+    return res.status(200).json({
+      success: true,
+      message: "등록된 강의 조회에 성공했습니다",
+      course,
+    });
   } catch (error) {
     console.error(error);
     return res.json({
