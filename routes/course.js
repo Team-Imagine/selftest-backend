@@ -8,14 +8,33 @@ router.get("/", async (req, res, next) => {
     // 쿼리 기본값
     let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
+    let subject_title = req.query.subject_title;
 
-    const courses = await Course.findAll({
+    let queryOptions = {
       attributes: ["title"],
       include: [{ model: Subject, attributes: ["title"] }],
+      where: {},
       order: [["title", "DESC"]],
       offset: +page - 1,
       limit: +per_page,
-    });
+    };
+    // 강의 이름을 전달받았다면 강의 이름으로 검색
+    if (subject_title) {
+      const subject = await Subject.findOne({
+        attributes: ["id", "title"],
+        where: { title: subject_title },
+      });
+
+      if (!subject) {
+        return res.status(400).json({
+          success: false,
+          message: "해당 과목 이름으로 등록된 과목이 존재하지 않습니다.",
+        });
+      }
+      queryOptions.where.subject_id = subject.id;
+    }
+
+    const courses = await Course.findAll(queryOptions);
 
     if (courses.length == 0) {
       return res.json({
