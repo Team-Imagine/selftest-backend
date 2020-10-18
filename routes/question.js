@@ -25,10 +25,8 @@ router.get("/", async (req, res, next) => {
     let course_title = req.query.course_title;
 
     let queryOptions = {
-      attributes: ["id", "content", "createdAt"],
-      where: {
-        blocked: false,
-      },
+      attributes: ["id", "content", "blocked", "createdAt"],
+      where: {},
       include: [
         { model: User, attributes: ["username"] },
         { model: Course, attributes: ["title"] },
@@ -76,10 +74,9 @@ router.get("/:id", async (req, res, next) => {
   try {
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const question = await Question.findOne({
-      attributes: ["id", "content", "createdAt"],
+      attributes: ["id", "content", "blocked", "createdAt"],
       where: {
         id: req.params.id,
-        blocked: false,
       },
       include: [
         { model: User, attributes: ["username"] },
