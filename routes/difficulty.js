@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 
+const { averageDifficulty } = require("./middlewares");
 const { Difficulty } = require("../models");
 
 // CREATE
@@ -13,10 +14,13 @@ router.post("/", async (req, res, next) => {
       question_id,
       user_id,
     });
+
+    let t_difficulty = await averageDifficulty(question_id);
+
     return res.status(200).json({
       success: true,
       message: "난이도가 성공적으로 등록되었습니다.",
-      difficulty,
+      t_difficulty,
     });
   } catch (error) {
     console.error(error);
@@ -36,6 +40,14 @@ router.put("/", async (req, res, next) => {
       question_id: question_id,
     }
   })
+
+  let t_difficulty = await averageDifficulty(question_id);
+
+  return res.status(200).json({
+    success: true,
+    message: "난이도가 성공적으로 수정되었습니다.",
+    t_difficulty,
+  });
 } catch (error) {
   console.error(error);
   return res.status(400).json({
