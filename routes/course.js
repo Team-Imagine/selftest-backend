@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 const { Subject, Course } = require("../models");
+const Op = require("sequelize").Op;
 
 // 페이지네이션을 이용해 강의 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -8,7 +9,8 @@ router.get("/", async (req, res, next) => {
     // 쿼리 기본값
     let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
-    let subject_title = req.query.subject_title;
+    let subject_title = req.query.subject_title; // 과목 이름
+    let q_course_title = req.query.q_course_title; // 검색할 강의 이름
 
     let queryOptions = {
       attributes: ["title"],
@@ -18,7 +20,22 @@ router.get("/", async (req, res, next) => {
       offset: +page - 1,
       limit: +per_page,
     };
-    // 강의 이름을 전달받았다면 강의 이름으로 검색
+
+    // 제목 검색어를 전달 받을 경우
+    if (q_course_title) {
+      // 제목 검색 길이 제한
+      if (q_course_title.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "검색어는 2자 이상이어야 합니다",
+        });
+      }
+      queryOptions.where.title = {
+        [Op.like]: "%" + q_course_title + "%",
+      };
+    }
+
+    // 과목 이름을 전달받았다면 과목 이름으로 검색
     if (subject_title) {
       const subject = await Subject.findOne({
         attributes: ["id", "title"],

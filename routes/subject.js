@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 const { Subject, Course } = require("../models");
+const Op = require("sequelize").Op;
 
 // 페이지네이션을 이용해 과목 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -8,20 +9,32 @@ router.get("/", async (req, res, next) => {
     // 쿼리 기본값
     let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
+    let q_subject_title = req.query.q_subject_title; // 검색할 과목 이름
 
-    const subjects = await Subject.findAll({
+    let queryOptions = {
       attributes: ["title"],
+      where: {},
       order: [["title", "DESC"]],
       offset: +page - 1,
       limit: +per_page,
-    });
+    };
 
-    if (subjects.length == 0) {
-      return res.json({
-        success: false,
-        message: "등록된 과목이 없습니다",
-      });
+    // 제목 검색어를 전달 받을 경우
+    if (q_subject_title) {
+      // 제목 검색 길이 제한
+      if (q_subject_title.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "검색어는 2자 이상이어야 합니다",
+        });
+      }
+      queryOptions.where.title = {
+        [Op.like]: "%" + q_subject_title + "%",
+      };
     }
+
+    const subjects = await Subject.findAll(queryOptions);
+
     return res.status(200).json({
       success: true,
       message: "등록된 과목 목록 조회에 성공했습니다",
