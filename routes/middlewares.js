@@ -260,9 +260,8 @@ const givePenalty = async (req, res) => {
 
   let termination_date = new Date();
   
-  termination_date.setDate(termination_date.getDate() + 23);
+  termination_date.setDate(termination_date.getDate() + 3);
 
-  console.log('123');
   try {
     await PenaltyLog.create({
       termination_date,
@@ -290,10 +289,21 @@ const givePoint = async (req, res) => {
       user_id,
       content,
     });
+    
+    let userPoint = await User.findOne({
+      attributes: ["point"],
+      where: { id: user_id },
+    });
 
-    return res.json({
+    await User.update({ point: Number(userPoint.point) + Number(amount) }, {
+      where: {
+        id: user_id,
+      }
+    })
+
+    res.status(200).json({
       success: true,
-      message: "포인트가 성공적으로 추가되었습니다.",
+      message: "유저의 포인트 부여에 성공했습니다.",
     });
   } catch (error) {
     console.error(error);
@@ -341,7 +351,7 @@ const readUserPoint = async (req, res) => {
 
   try {
     let userPoint = await User.findOne({
-      attrivutes: ["point"],
+      attributes: ["point"],
       where: { user_id },
     });
 

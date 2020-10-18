@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 
-const { totalLike, totalDislike } = require("./middlewares");
+const { totalLike, totalDislike, givePoint } = require("./middlewares");
 
 const { Like } = require("../models");
 
@@ -27,11 +27,11 @@ router.get("/:likeable_entity_id", async (req, res, next) => {
   }
 });
 
-/*
+
 router.post("/test", async (req, res, next) => {
   //const { user_id, content } = req.body;
   try {
-    await givePenalty(req, res);
+    await givePoint(req, res);
 
     return res.json({
       success: true,
@@ -45,7 +45,7 @@ router.post("/test", async (req, res, next) => {
     });
   }
 });
-*/
+
 
 // CREATE
 router.post("/", async (req, res, next) => {
@@ -75,6 +75,8 @@ router.post("/", async (req, res, next) => {
     });
   }
 });
+
+
 
 router.delete("/", async (req, res, next) => {
   const { likeable_entity_id, user_id } = req.body;
