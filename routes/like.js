@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 
-// const { totalLike, totalDislike, totalFinalLike, givePenalty } = require("./middlewares");
+const { totalLike, totalDislike } = require("./middlewares");
 
 const { Like } = require("../models");
 
@@ -50,7 +50,7 @@ router.post("/test", async (req, res, next) => {
 // CREATE
 router.post("/", async (req, res, next) => {
   const { good, likeable_entity_id, user_id } = req.body;
-
+  
   try {
     await Like.create({
       good,
@@ -58,9 +58,14 @@ router.post("/", async (req, res, next) => {
       user_id,
     });
 
+    let t_like = await totalLike(likeable_entity_id);
+    let t_dislike = await totalDislike(likeable_entity_id);
+
     res.status(200).json({
       success: true,
       message: "Like가 성공적으로 등록되었습니다.",
+      t_like,
+      t_dislike,
     });
   } catch (error) {
     console.error(error);

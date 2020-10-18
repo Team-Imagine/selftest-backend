@@ -194,7 +194,7 @@ const questionBlocked = async (question_id, likeable_entity_id) => {
     console.error(error);
     return null;
   }
-} 
+}
 
 // 문제에 부여된 신선도 점수를 합산하는 함수
 const totalFresh = async (question_id) => {
