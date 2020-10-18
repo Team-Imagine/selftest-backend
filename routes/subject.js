@@ -42,7 +42,7 @@ router.get("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "요청 오류",
     });
@@ -60,7 +60,7 @@ router.get("/:title", async (req, res, next) => {
     });
 
     if (!subject) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "해당 과목 이름으로 등록된 과목이 존재하지 않습니다",
       });
@@ -72,7 +72,7 @@ router.get("/:title", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "요청 오류",
     });
@@ -86,7 +86,7 @@ router.post("/", async (req, res, next) => {
     // 동일한 과목 이름을 가진 강의가 있는지 확인
     const existingSubject = await Subject.findOne({ where: { title } });
     if (existingSubject) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "해당 과목 이름으로 등록된 과목이 존재합니다",
       });
@@ -103,7 +103,7 @@ router.post("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "요청 오류",
     });

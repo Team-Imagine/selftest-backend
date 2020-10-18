@@ -53,12 +53,6 @@ router.get("/", async (req, res, next) => {
 
     const courses = await Course.findAll(queryOptions);
 
-    if (courses.length == 0) {
-      return res.json({
-        success: false,
-        message: "등록된 강의가 없습니다",
-      });
-    }
     return res.status(200).json({
       success: true,
       message: "등록된 강의 목록 조회에 성공했습니다",
@@ -66,7 +60,7 @@ router.get("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "요청 오류",
     });
@@ -84,9 +78,9 @@ router.get("/:title", async (req, res, next) => {
     });
 
     if (!course) {
-      return res.json({
+      return res.status(400).json({
         success: false,
-        message: "해당 강의가 존재하지 않습니다",
+        message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다",
       });
     }
     return res.status(200).json({
@@ -96,7 +90,7 @@ router.get("/:title", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "요청 오류",
     });
@@ -110,7 +104,7 @@ router.post("/", async (req, res, next) => {
     // 동일한 강의 이름을 가진 강의가 있는지 확인
     const existingCourse = await Course.findOne({ where: { title } });
     if (existingCourse) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "해당 강의 이름으로 등록된 강의가 존재합니다",
       });
@@ -118,7 +112,7 @@ router.post("/", async (req, res, next) => {
 
     const subject = await Subject.findOne({ where: { title: subject_title } });
     if (!subject) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "해당 과목 이름으로 등록된 과목이 존재하지 않습니다",
       });
@@ -140,7 +134,7 @@ router.post("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "요청 오류",
     });
