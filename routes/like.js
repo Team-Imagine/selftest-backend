@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 
-const { totalLike, totalDislike, givePoint } = require("./middlewares");
+const { totalLike, totalDislike, givePoint, givePenalty } = require("./middlewares");
 
 const { Like } = require("../models");
 
@@ -33,10 +33,6 @@ router.post("/test", async (req, res, next) => {
   try {
     await givePoint(req, res);
 
-    return res.json({
-      success: true,
-      message: "성공",
-    });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
