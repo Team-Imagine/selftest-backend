@@ -10,6 +10,14 @@ const router = express.Router();
 
 router.post("/register", isNotLoggedIn, async (req, res, next) => {
   const { email, username, password, first_name, last_name, phone_number } = req.body;
+
+  if (!email || !username || !password || !first_name || !last_name) {
+    return res.status(400).json({
+      success: false,
+      message: "양식 (이메일, 닉네임, 비밀번호, 성, 이름)이 비어있어 가입에 실패했습니다",
+    });
+  }
+
   try {
     // 동일한 이메일로 가입한 사용자가 있는지 확인
     let existingUser = await User.findOne({ where: { email } });
