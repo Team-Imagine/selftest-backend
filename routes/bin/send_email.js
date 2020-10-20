@@ -53,7 +53,7 @@ const sendVerificationEmail = async function (user_email) {
   let mailOptions = {
     from: process.env.VERIFICATION_EMAIL, // 발송 메일 주소
     to: user_email, // 수신 메일 주소
-    subject: "Sending Email using Node.js", // 제목
+    subject: "SelfTest 회원가입 인증 메일", // 제목
     html: pug.renderFile(path.join("views", "email-verification.pug"), { verification_code: verification_code }),
   };
 
