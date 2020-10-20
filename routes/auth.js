@@ -2,13 +2,13 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { User, VerificationCode } = require("../models");
-const { isLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
+const { isLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
 const sendVerificationEMail = require("./bin/send_email").sendVerificationEmail;
 require("dotenv").config();
 
 const router = express.Router();
 
-router.post("/register", async (req, res, next) => {
+router.post("/register", isNotLoggedIn, async (req, res, next) => {
   const { email, username, password, first_name, last_name } = req.body;
   try {
     // 동일한 이메일로 가입한 사용자가 있는지 확인
@@ -49,7 +49,7 @@ router.post("/register", async (req, res, next) => {
 
 // 로그인
 // 토큰을 생성하고 사용자에게 반환한다 (httpOnly cookies)
-router.post("/login", async (req, res, next) => {
+router.post("/login", isNotLoggedIn, async (req, res, next) => {
   const { email, password } = req.body;
 
   // 이메일로 사용자 조회
