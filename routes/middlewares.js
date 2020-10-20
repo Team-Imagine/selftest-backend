@@ -15,6 +15,23 @@ const isLoggedIn = async function (req, res, next) {
   }
 };
 
+const isNotLoggedIn = async function (req, res, next) {
+  try {
+    const result = await validateJwt(req, res);
+
+    if (!result) {
+      next();
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: "로그인이 이미 되어있습니다",
+      });
+    }
+  } catch (error) {
+    next();
+  }
+};
+
 // JWT 토큰 유효 검증 함수
 const validateJwt = function (req, res) {
   return new Promise((resolve, reject) => {
@@ -391,6 +408,7 @@ const readTotalPointLog = async (req, res) => {
 
 module.exports = {
   isLoggedIn,
+  isNotLoggedIn,
   generateRefreshToken,
   getLoggedInUserId,
   givePoint,
