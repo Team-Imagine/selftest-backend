@@ -9,7 +9,7 @@ require("dotenv").config();
 const router = express.Router();
 
 router.post("/register", isNotLoggedIn, async (req, res, next) => {
-  const { email, username, password, first_name, last_name } = req.body;
+  const { email, username, password, first_name, last_name, phone_number } = req.body;
   try {
     // 동일한 이메일로 가입한 사용자가 있는지 확인
     let existingUser = await User.findOne({ where: { email } });
@@ -34,6 +34,7 @@ router.post("/register", isNotLoggedIn, async (req, res, next) => {
       password: hash,
       first_name,
       last_name,
+      phone_number,
     });
     return res.status(200).json({
       success: true,
