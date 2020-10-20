@@ -118,27 +118,37 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
 });
 
 // 로그아웃 - req.body의 id를 이용해 로그아웃
-router.post("/logout", (req, res) => {
-  // 사용자 refresh 토큰을 Redis로부터 삭제
-  req.client.del(req.body.uid, (err, response) => {
-    if (response == 1) {
-      console.log("Redis로부터 사용자 refresh 토큰 삭제 성공");
-      // 브라우저로부터 httpOnly 쿠키도 삭제
-      res.clearCookie("access_token");
-      res.clearCookie("refresh_token");
+router.post("/logout", isLoggedIn, async (req, res, next) => {
+  try {
+    // 로그인 검증
+    const user_id = await getLoggedInUserId(req, res); // 현재 로그인한 사용자 ID
 
-      res.status(200).json({
-        success: true,
-        message: "로그아웃 성공",
-      });
-    } else {
-      console.log("Redis로부터 사용자 refresh 토큰 삭제 실패");
-      res.status(400).json({
-        success: false,
-        message: "로그아웃 실패",
-      });
-    }
-  });
+    // 사용자 refresh 토큰을 Redis로부터 삭제
+    req.client.del(user_id, (err, response) => {
+      if (response == 1) {
+        console.log("Redis로부터 사용자 refresh 토큰 삭제 성공");
+        // 브라우저로부터 httpOnly 쿠키도 삭제
+        res.clearCookie("access_token");
+        res.clearCookie("refresh_token");
+
+        res.status(200).json({
+          success: true,
+          message: "로그아웃 성공",
+        });
+      } else {
+        console.log("Redis로부터 사용자 refresh 토큰 삭제 실패");
+        res.status(400).json({
+          success: false,
+          message: "로그아웃 실패",
+        });
+      }
+    });
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      message: "로그인 되어있지 않습니다",
+    });
+  }
 });
 
 router.post("/profile", (req, res, next) => {
