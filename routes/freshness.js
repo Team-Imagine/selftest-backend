@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 
+const { totalFresh, totalStale } = require("./middlewares");
 const { Freshness } = require("../models");
 
 // freshness
@@ -16,29 +17,15 @@ router.post("/", async (req, res, next) => {
       question_id,
       user_id,
     });
+
+    let t_fresh = await totalFresh(question_id);
+    let t_stale = await totalStale(question_id);
+
     return res.status(200).json({
       success: true,
       message: "신선도가 성공적으로 등록되었습니다.",
-      freshness,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      message: "DB 오류",
-    });
-  }
-});
-
-router.post("/total", async (req, res, next) => {
-  const { question_id } = req.body;
-  try {
-    let result = await totalFresh(question_id);
-
-    console.log(result);
-    return res.json({
-      success: true,
-      message: "성공",
+      t_fresh,
+      t_stale,
     });
   } catch (error) {
     console.error(error);

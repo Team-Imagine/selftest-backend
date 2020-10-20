@@ -6,6 +6,9 @@ const session = require("express-session");
 const passport = require("passport");
 const redis = require("./redis_instance");
 const client = redis.getConnection();
+
+var cors = require('cors');
+
 require("dotenv").config();
 
 // routers
@@ -15,6 +18,8 @@ const { sequelize } = require("./models");
 const passportConfig = require("./config/passport");
 
 const app = express();
+app.use(cors());
+
 app.set("port", process.env.PORT || 8002);
 sequelize
   .sync({ force: false })
