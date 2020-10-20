@@ -5,7 +5,6 @@ const { totalLike, totalDislike, givePoint, givePenalty } = require("./middlewar
 
 const { Like } = require("../models");
 
-
 // 문제 id에 따른 Like 한 유저 id 목록을 가져온다.
 router.get("/:likeable_entity_id", async (req, res, next) => {
   try {
@@ -27,12 +26,10 @@ router.get("/:likeable_entity_id", async (req, res, next) => {
   }
 });
 
-
 router.post("/test", async (req, res, next) => {
   //const { user_id, content } = req.body;
   try {
     await givePoint(req, res);
-
   } catch (error) {
     console.error(error);
     return res.status(400).json({
@@ -42,11 +39,10 @@ router.post("/test", async (req, res, next) => {
   }
 });
 
-
 // CREATE
 router.post("/", async (req, res, next) => {
   const { good, likeable_entity_id, user_id } = req.body;
-  
+
   try {
     await Like.create({
       good,
@@ -71,8 +67,6 @@ router.post("/", async (req, res, next) => {
     });
   }
 });
-
-
 
 router.delete("/", async (req, res, next) => {
   const { likeable_entity_id, user_id } = req.body;

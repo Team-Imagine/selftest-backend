@@ -6,9 +6,7 @@ const session = require("express-session");
 const passport = require("passport");
 const redis = require("./redis_instance");
 const client = redis.getConnection();
-
-var cors = require('cors');
-
+const cors = require("cors");
 require("dotenv").config();
 
 // routers

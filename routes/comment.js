@@ -32,7 +32,6 @@ router.get("/all", async (req, res, next) => {
   }
 });
 
-
 // 해당 유저의 comment List 불러옴
 router.get("/:user_id", async (req, res, next) => {
   try {
@@ -65,7 +64,7 @@ router.get("/:user_id", async (req, res, next) => {
 
 // CREATE // take comment from react page & store data to db
 router.post("/", async (req, res, next) => {
-  const { content, user_id, commentable_entity_id} = req.body;
+  const { content, user_id, commentable_entity_id } = req.body;
 
   try {
     await Comment.create({
@@ -73,7 +72,7 @@ router.post("/", async (req, res, next) => {
       user_id,
       commentable_entity_id,
     });
-    
+
     return res.json({
       success: true,
       message: "comment가 성공적으로 등록되었습니다.",
@@ -88,9 +87,9 @@ router.post("/", async (req, res, next) => {
 });
 
 router.put("/", async (req, res, next) => {
-    const { content, commentable_entity_id } = req.body;
+  const { content, commentable_entity_id } = req.body;
   try {
-    await Comment.update({comment: content},{ where: { id: commentable_entity_id }});
+    await Comment.update({ comment: content }, { where: { id: commentable_entity_id } });
 
     return res.status(200).json({
       success: true,
@@ -108,7 +107,7 @@ router.put("/", async (req, res, next) => {
 router.delete("/", async (req, res, next) => {
   const { commentable_entity_id } = req.body;
   try {
-    await Comment.destroy({where: { id: commentable_entity_id }});
+    await Comment.destroy({ where: { id: commentable_entity_id } });
 
     return res.status(200).json({
       success: true,

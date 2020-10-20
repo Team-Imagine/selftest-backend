@@ -34,27 +34,30 @@ router.post("/", async (req, res, next) => {
 router.put("/", async (req, res, next) => {
   const { score, user_id, question_id } = req.body;
   try {
-  await Difficulty.update({ score: score }, {
-    where: {
-      user_id: user_id,
-      question_id: question_id,
-    }
-  })
+    await Difficulty.update(
+      { score: score },
+      {
+        where: {
+          user_id: user_id,
+          question_id: question_id,
+        },
+      }
+    );
 
-  let t_difficulty = await averageDifficulty(question_id);
+    let t_difficulty = await averageDifficulty(question_id);
 
-  return res.status(200).json({
-    success: true,
-    message: "난이도가 성공적으로 수정되었습니다.",
-    t_difficulty,
-  });
-} catch (error) {
-  console.error(error);
-  return res.status(400).json({
-    success: false,
-    message: "DB 오류",
-  });
-}
+    return res.status(200).json({
+      success: true,
+      message: "난이도가 성공적으로 수정되었습니다.",
+      t_difficulty,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      message: "DB 오류",
+    });
+  }
 });
 
 router.delete("/", async (req, res, next) => {

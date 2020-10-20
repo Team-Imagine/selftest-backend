@@ -54,9 +54,6 @@ router.delete("/", async (req, res, next) => {
       message: "DB 오류",
     });
   }
-
 });
-
-
 
 module.exports = router;

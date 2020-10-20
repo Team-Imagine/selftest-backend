@@ -154,13 +154,13 @@ const totalLike = async (likeable_entity_id) => {
     let likes = await Like.count({
       where: { likeable_entity_id, good: true },
     });
-    
+
     return likes;
   } catch (error) {
     console.error(error);
     return null;
   }
-}
+};
 
 // 항목에 부여된 싫어요 점수를 합산하는 함수
 const totalDislike = async (likeable_entity_id) => {
@@ -168,50 +168,52 @@ const totalDislike = async (likeable_entity_id) => {
     let dislikes = await Like.count({
       where: { likeable_entity_id, good: false },
     });
-    
+
     return dislikes;
   } catch (error) {
     console.error(error);
     return null;
   }
-}
+};
 
 // 항목에 부여된 좋아요, 싫어요 점수를 합산하는 함수
 const totalFinalLike = async (likeable_entity_id) => {
   try {
     let likes = await totalLike(likeable_entity_id);
 
-    console.log('likes:', likes);
+    console.log("likes:", likes);
     let dislikes = await totalDislike(likeable_entity_id);
-    console.log('dislikes:', dislikes);
+    console.log("dislikes:", dislikes);
     return likes - dislikes;
   } catch (error) {
     console.error(error);
     return null;
   }
-}
+};
 
-// 문제의 블라인드 처리를 정하는 함수 
+// 문제의 블라인드 처리를 정하는 함수
 const questionBlocked = async (question_id, likeable_entity_id) => {
   try {
     let likes = await totalLike(likeable_entity_id);
 
     let dislikes = await totalDislike(likeable_entity_id);
-    
-    // 블라인드 조건: 싫어요 20개 이상 & 싫어요 / 좋아요  2 이상  
-    if(dislikes >= 20 && dislikes / likes > 2) {  
-      await Question.update({ blocked: true }, {
-        where: {
-          question_id: question_id,
-        }
-      });
-    }
 
+    // 블라인드 조건: 싫어요 20개 이상 & 싫어요 / 좋아요  2 이상
+    if (dislikes >= 20 && dislikes / likes > 2) {
+      await Question.update(
+        { blocked: true },
+        {
+          where: {
+            question_id: question_id,
+          },
+        }
+      );
+    }
   } catch (error) {
     console.error(error);
     return null;
   }
-}
+};
 
 // 문제에 부여된 신선도 점수를 합산하는 함수
 const totalFresh = async (question_id) => {
@@ -256,27 +258,29 @@ const totalFinalFresh = async (question_id) => {
 };
 
 // 문제의 난이도의 평균을 산출하는 함수
-const averageDifficulty = async(question_id) => {
+const averageDifficulty = async (question_id) => {
   try {
-    let difficulties = await Difficulty.sum("score", {
-      where: { question_id },
-    }) / await Difficulty.count("score", {
-      where: { question_id },
-    })
+    let difficulties =
+      (await Difficulty.sum("score", {
+        where: { question_id },
+      })) /
+      (await Difficulty.count("score", {
+        where: { question_id },
+      }));
 
     return difficulties;
   } catch (error) {
     console.error(error);
     return null;
   }
-}
+};
 
 // 유저에게 패널티를 부여하는 함수
 const givePenalty = async (req, res) => {
   const { user_id, content } = req.body;
 
   let termination_date = new Date();
-  
+
   termination_date.setDate(termination_date.getDate() + 3);
 
   try {
@@ -284,17 +288,20 @@ const givePenalty = async (req, res) => {
       termination_date,
       content,
       user_id,
-    })
+    });
 
-    await User.update({ active: false }, {
-      where: {
-        id: user_id,
+    await User.update(
+      { active: false },
+      {
+        where: {
+          id: user_id,
+        },
       }
-    })
+    );
   } catch (error) {
     console.error(error);
   }
-}
+};
 
 // 유저에게 포인트를 부여하는 함수
 const givePoint = async (req, res) => {
@@ -306,17 +313,20 @@ const givePoint = async (req, res) => {
       user_id,
       content,
     });
-    
+
     let userPoint = await User.findOne({
       attributes: ["point"],
       where: { id: user_id },
     });
 
-    await User.update({ point: Number(userPoint.point) + Number(amount) }, {
-      where: {
-        id: user_id,
+    await User.update(
+      { point: Number(userPoint.point) + Number(amount) },
+      {
+        where: {
+          id: user_id,
+        },
       }
-    })
+    );
 
     res.status(200).json({
       success: true,
