@@ -134,6 +134,26 @@ const generateRefreshToken = function (req, uid) {
   return refresh_token;
 };
 
+// 접속한 사용자의 정보를 불러오는 함수 - 사용하려는 라우트에서 isLoggedIn이 미들웨어로 반드시 존재해야 함
+// 인증에 오류가 있을시 null 반환
+const getLoggedInUserInfo = async function (req, res) {
+  try {
+    await validateJwt(req, res);
+
+    // 사용자 브라우저 토큰을 가져와 접속한 사용자 id를 읽음
+    let accesstoken = req.cookies.access_token || null;
+    const decoded_uid = jwt.decode(accesstoken, process.env.JWT_SECRET).uid;
+    const user = await User.findOne({
+      attributes: ["id", "verified", "active"],
+      where: { id: decoded_uid },
+      raw: true,
+    });
+    return user;
+  } catch (error) {
+    return null;
+  }
+};
+
 // 접속한 사용자의 id를 불러오는 함수 - 사용하려는 라우트에서 isLoggedIn이 미들웨어로 반드시 존재해야 함
 // 인증에 오류가 있을시 null 반환
 const getLoggedInUserId = async function (req, res) {
@@ -432,6 +452,7 @@ module.exports = {
   isLoggedIn,
   isNotLoggedIn,
   generateRefreshToken,
+  getLoggedInUserInfo,
   getLoggedInUserId,
   givePoint,
   readUserPoint,
