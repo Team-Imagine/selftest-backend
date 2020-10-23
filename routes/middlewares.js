@@ -4,7 +4,26 @@ require("dotenv").config();
 
 const isLoggedIn = async function (req, res, next) {
   try {
-    await validateJwt(req, res);
+    const user = await getLoggedInUserInfo(req, res);
+
+    // 이메일 인증이 안돼있을 경우
+    if (!user.verified) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotEmailVerified",
+        message: "사용자가 이메일 인증이 되어 있지 않습니다",
+      });
+    }
+
+    // 사용자가 정지 상태인 경우
+    if (!user.active) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotActive",
+        message: "사용자가 정지 상태입니다",
+      });
+    }
+
     next();
   } catch (error) {
     console.error(error);
