@@ -14,6 +14,7 @@ router.post("/register", isNotLoggedIn, async (req, res, next) => {
   if (!email || !username || !password || !first_name || !last_name) {
     return res.status(400).json({
       success: false,
+      error: "formFieldsEmpty",
       message: "양식 (이메일, 닉네임, 비밀번호, 성, 이름)이 비어있어 가입에 실패했습니다",
     });
   }
@@ -24,6 +25,7 @@ router.post("/register", isNotLoggedIn, async (req, res, next) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
+        error: "userExistsWithEmail",
         message: "이미 동일한 이메일로 가입한 사용자가 존재합니다",
       });
     }
@@ -32,6 +34,7 @@ router.post("/register", isNotLoggedIn, async (req, res, next) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
+        error: "userExistsWithUsername",
         message: "이미 동일한 닉네임으로 가입한 사용자가 존재합니다",
       });
     }
@@ -51,6 +54,7 @@ router.post("/register", isNotLoggedIn, async (req, res, next) => {
   } catch (error) {
     return res.status(400).json({
       success: false,
+      error: "registerFails",
       message: "가입에 실패했습니다",
     });
   }
@@ -67,6 +71,7 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
+        error: "userNotExists",
         message: "해당하는 회원이 존재하지 않습니다",
       });
     }
@@ -114,6 +119,7 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
     } else {
       return res.status(401).json({
         success: false,
+        error: "authFails",
         message: "패스워드가 일치하지 않습니다",
       });
     }
@@ -121,6 +127,7 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
     console.error(error);
     res.status(401).json({
       success: false,
+      error: "loginFails",
       message: "로그인 오류",
     });
   }
@@ -148,6 +155,7 @@ router.post("/logout", isLoggedIn, async (req, res, next) => {
         console.log("Redis로부터 사용자 refresh 토큰 삭제 실패");
         res.status(400).json({
           success: false,
+          error: "tokenDeletionFails",
           message: "로그아웃 실패",
         });
       }
@@ -155,7 +163,8 @@ router.post("/logout", isLoggedIn, async (req, res, next) => {
   } catch (error) {
     res.status(401).json({
       success: false,
-      message: "로그인 되어있지 않습니다",
+      error: "userNotLoggedIn",
+      message: "로그인 되어 있지 않습니다",
     });
   }
 });
@@ -174,7 +183,8 @@ router.post("/send-verification-email", isLoggedIn, async (req, res, next) => {
     if (!user_id) {
       return res.status(401).json({
         success: false,
-        message: "로그인 되어있지 않습니다",
+        error: "userNotLoggedIn",
+        message: "로그인 되어 있지 않습니다",
       });
     }
 
@@ -187,6 +197,7 @@ router.post("/send-verification-email", isLoggedIn, async (req, res, next) => {
     if (user.verified) {
       return res.status(400).json({
         success: false,
+        error: "userAlreadyEmailVerified",
         message: "가입 인증이 이미 되어있습니다",
       });
     }
@@ -200,8 +211,8 @@ router.post("/send-verification-email", isLoggedIn, async (req, res, next) => {
     console.error(error);
     return res.status(400).json({
       success: false,
+      error: "verificationEmailSendFails",
       message: "가입 인증 이메일 발송에 실패했습니다",
-      error: error.message,
     });
   }
 });
@@ -221,10 +232,11 @@ router.post("/verify-email", isLoggedIn, async (req, res, next) => {
       raw: true,
     });
 
-    // 가입 인증이 필요할 경우에만 전송
+    // 가입 인증이 필요할 경우에만 실행
     if (user.verified) {
       return res.status(400).json({
         success: false,
+        error: "userAlreadyEmailVerified",
         message: "가입 인증이 이미 되어있습니다",
       });
     }
@@ -250,6 +262,7 @@ router.post("/verify-email", isLoggedIn, async (req, res, next) => {
 
       return res.status(400).json({
         success: false,
+        error: "verificationCodeExpires",
         message: "인증 만료 시간이 지났습니다. 코드를 다시 발급받으세요",
       });
     }
@@ -270,12 +283,14 @@ router.post("/verify-email", isLoggedIn, async (req, res, next) => {
     } else {
       return res.status(400).json({
         success: false,
+        error: "verificationCodeMismatches",
         message: "가입 인증에 실패했습니다. 인증 코드를 다시 확인해주세요",
       });
     }
   } catch (error) {
     return res.status(400).json({
       success: false,
+      error: "emailVerificationFails",
       message: "가입 인증에 실패했습니다",
     });
   }

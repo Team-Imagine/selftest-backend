@@ -27,6 +27,7 @@ router.get("/", async (req, res, next) => {
       if (q_course_title.length < 2) {
         return res.status(400).json({
           success: false,
+          error: "contentNotEnough",
           message: "검색어는 2자 이상이어야 합니다",
         });
       }
@@ -45,6 +46,7 @@ router.get("/", async (req, res, next) => {
       if (!subject) {
         return res.status(400).json({
           success: false,
+          error: "entryNotExists",
           message: "해당 과목 이름으로 등록된 과목이 존재하지 않습니다.",
         });
       }
@@ -62,6 +64,7 @@ router.get("/", async (req, res, next) => {
     console.error(error);
     return res.status(400).json({
       success: false,
+      error: "requestFails",
       message: "요청 오류",
     });
   }
@@ -80,6 +83,7 @@ router.get("/:title", async (req, res, next) => {
     if (!course) {
       return res.status(400).json({
         success: false,
+        error: "entryNotExists",
         message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다",
       });
     }
@@ -92,6 +96,7 @@ router.get("/:title", async (req, res, next) => {
     console.error(error);
     return res.status(400).json({
       success: false,
+      error: "requestFails",
       message: "요청 오류",
     });
   }
@@ -106,6 +111,7 @@ router.post("/", async (req, res, next) => {
     if (existingCourse) {
       return res.status(400).json({
         success: false,
+        error: "entryAlreadyExists",
         message: "해당 강의 이름으로 등록된 강의가 존재합니다",
       });
     }
@@ -114,6 +120,7 @@ router.post("/", async (req, res, next) => {
     if (!subject) {
       return res.status(400).json({
         success: false,
+        error: "entryNotExists",
         message: "해당 과목 이름으로 등록된 과목이 존재하지 않습니다",
       });
     }
@@ -136,6 +143,7 @@ router.post("/", async (req, res, next) => {
     console.error(error);
     return res.status(400).json({
       success: false,
+      error: "requestFails",
       message: "요청 오류",
     });
   }

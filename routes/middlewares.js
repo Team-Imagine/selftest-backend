@@ -10,7 +10,8 @@ const isLoggedIn = async function (req, res, next) {
     console.error(error);
     return res.status(401).json({
       success: false,
-      message: "로그인 오류: " + error,
+      error: error,
+      message: "로그인 되어 있지 않습니다",
     });
   }
 };
@@ -24,6 +25,7 @@ const isNotLoggedIn = async function (req, res, next) {
     } else {
       return res.status(401).json({
         success: false,
+        error: "userAlreadyLoggedIn",
         message: "로그인이 이미 되어있습니다",
       });
     }
@@ -61,7 +63,7 @@ const validateJwt = function (req, res) {
                   // hacking 시도 감지
                   // 해당 사용자에 대해서, 해당 값을 가진 refresh 토큰이 없거나
                   // 또는 refresh token이 request로부터 온 것과 storage로부터 온 것이 다르다는 것을 의미
-                  reject("Nice try.");
+                  reject("refreshTokenDiffersFromServer");
                 } else {
                   // refresh 토큰이 expire된 경우
                   // access 토큰과 refresh token 둘다 새로 갱신
@@ -116,12 +118,12 @@ const validateJwt = function (req, res) {
           }
         } catch (error) {
           console.error(error);
-          reject("인증 오류");
+          reject("tokenValidationFails");
         }
       });
     } else {
       // 토큰이 없는데 로그인하려고 할 경우
-      reject("토큰 존재하지 않음.");
+      reject("tokenNotExists");
     }
   });
 };
