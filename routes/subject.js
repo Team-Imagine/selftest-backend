@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const { Subject, Course } = require("../models");
 const Op = require("sequelize").Op;
+const sanitizeHtml = require("sanitize-html");
 
 // 페이지네이션을 이용해 과목 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -96,9 +97,11 @@ router.post("/", async (req, res, next) => {
         message: "해당 과목 이름으로 등록된 과목이 존재합니다",
       });
     }
+
     const subject = await Subject.create({
-      title,
+      title: sanitizeHtml(title),
     });
+
     return res.status(200).json({
       success: true,
       message: "과목이 성공적으로 등록되었습니다",

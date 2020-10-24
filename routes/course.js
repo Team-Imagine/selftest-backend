@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const { Subject, Course } = require("../models");
 const Op = require("sequelize").Op;
+const sanitizeHtml = require("sanitize-html");
 
 // 페이지네이션을 이용해 강의 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -126,7 +127,7 @@ router.post("/", async (req, res, next) => {
     }
 
     const course = await Course.create({
-      title,
+      title: sanitizedHtml(title),
       subject_id: subject.id,
     });
     return res.status(200).json({
