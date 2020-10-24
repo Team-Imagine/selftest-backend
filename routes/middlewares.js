@@ -172,12 +172,24 @@ const getLoggedInUserInfo = async function (req, res) {
     let accesstoken = req.cookies.access_token || null;
     const decoded_uid = jwt.decode(accesstoken, process.env.JWT_SECRET).uid;
     const user = await User.findOne({
-      attributes: ["id", "verified", "active"],
+      attributes: [
+        "id",
+        "email",
+        "username",
+        "first_name",
+        "last_name",
+        "phone_number",
+        "point",
+        "verified",
+        "active",
+        "created_at",
+      ],
       where: { id: decoded_uid },
       raw: true,
     });
     return user;
   } catch (error) {
+    console.error(error);
     return null;
   }
 };
