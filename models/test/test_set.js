@@ -3,7 +3,14 @@ const Sequelize = require("sequelize");
 module.exports = class TestSet extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
-      {},
+      {
+        title: {
+          type: Sequelize.STRING(50),
+          allowNull: false,
+          unique: true,
+          comment: "시험 이름",
+        },
+      },
       {
         sequelize,
         timestamps: true,

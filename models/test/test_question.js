@@ -16,14 +16,14 @@ module.exports = class TestQuestion extends Sequelize.Model {
     );
   }
   static associate(db) {
-    db.TestQuestion.belongsTo(db.User, {
+    db.TestQuestion.belongsTo(db.TestSet, {
       foreignKey: {
         name: "test_set_id",
         allowNull: false,
       },
       targetKey: "id",
     });
-    db.TestQuestion.belongsTo(db.TestQuestion, {
+    db.TestQuestion.belongsTo(db.Question, {
       foreignKey: {
         name: "question_id",
         allowNull: false,
