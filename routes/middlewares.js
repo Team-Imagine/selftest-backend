@@ -6,6 +6,15 @@ const isLoggedIn = async function (req, res, next) {
   try {
     const user = await getLoggedInUserInfo(req, res);
 
+    // 로그인 되어있지 않은 경우
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotLoggedIn",
+        message: "로그인 되어 있지 않습니다",
+      });
+    }
+
     // 이메일 인증이 안돼있을 경우
     if (!user.verified) {
       return res.status(401).json({
