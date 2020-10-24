@@ -1,7 +1,9 @@
 var express = require("express");
 var router = express.Router();
 const { User, Question, Answer, LikeableEntity, Like, CommentableEntity, Comment } = require("../models");
+const Op = require("sequelize").Op;
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const sanitizeHtml = require("sanitize-html");
 
 // 문제 ID에 따른 정답 정보를 가져옴
 router.get("/", isLoggedIn, async (req, res, next) => {
@@ -10,7 +12,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
     let question_id = req.query.question_id;
-    console.log(page, per_page, question_id);
+    let q_answer_content = req.query.q_answer_content;
 
     let queryOptions = {
       attributes: ["id", "content", "blocked", "createdAt"],
@@ -40,6 +42,22 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       queryOptions.where.question_id = question.id;
     }
 
+    // 정답 내용 검색어를 전달 받았을 경우
+    if (q_answer_content) {
+      // 정답 검색 키워드 길이 제한
+      if (q_answer_content.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "contentNotEnough",
+          message: "검색어는 2자 이상이어야 합니다",
+        });
+      }
+      // TODO: HTML 태그 제거 후 검색
+      queryOptions.where.content = {
+        [Op.like]: "%" + q_answer_content + "%",
+      };
+    }
+
     // 문제 목록 조회
     const answers = await Answer.findAll(queryOptions);
 
@@ -49,6 +67,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       answers,
     });
   } catch (error) {
+    console.error(error);
     return res.status(400).json({
       success: false,
       error: "entryNotExists",

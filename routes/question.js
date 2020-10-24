@@ -14,6 +14,7 @@ const {
   TestQuestion,
   Course,
 } = require("../models");
+const Op = require("sequelize").Op;
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const sanitizeHtml = require("sanitize-html");
 
@@ -24,6 +25,7 @@ router.get("/", async (req, res, next) => {
     let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
     let course_title = req.query.course_title;
+    let q_question_content = req.query.q_question_content;
 
     let queryOptions = {
       attributes: ["id", "content", "blocked", "createdAt"],
@@ -51,6 +53,22 @@ router.get("/", async (req, res, next) => {
         });
       }
       queryOptions.where.course_id = course.id;
+    }
+
+    // 문제 내용 검색어를 전달 받았을 경우
+    if (q_question_content) {
+      // 문제 검색 키워드 길이 제한
+      if (q_question_content.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "contentNotEnough",
+          message: "검색어는 2자 이상이어야 합니다",
+        });
+      }
+      // TODO: HTML 태그 제거 후 검색
+      queryOptions.where.content = {
+        [Op.like]: "%" + q_question_content + "%",
+      };
     }
 
     // 비활성화되지 않은 문제만 불러옴
