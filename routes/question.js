@@ -71,7 +71,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// 문제 id에 따른 문제 정보를 가져옴
+// 문제 ID에 따른 문제 정보를 가져옴
 router.get("/:id", async (req, res, next) => {
   try {
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
@@ -108,7 +108,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-// 문제 생성
+// 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
   const { content, course_title } = req.body;
   try {
@@ -116,7 +116,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     // TODO: 동일하거나 유사한 문제 존재시 중복문제 또는 복수정답 처리
     // ...
 
-    // 접속한 사용자의 id를 받아옴
+    // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
     // 주어진 강의 이름에 해당하는 강의가 존재하는지 확인
@@ -129,7 +129,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    // TODO: 수정할 문제 내용이 존재하는지 확인
+    // TODO: 생성할 문제 내용이 충분한지 확인
     if (!content) {
       return res.status(400).json({
         success: false,
@@ -172,12 +172,12 @@ router.post("/", isLoggedIn, async (req, res, next) => {
   }
 });
 
-// 문제 id에 해당하는 문제 내용을 수정
+// 문제 ID에 해당하는 문제 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
   const { id } = req.params;
   const { content } = req.body;
   try {
-    // 접속한 사용자의 id를 받아옴
+    // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
     // 접속한 사용자의 ID와 query에 있는 문제의 user_id룰 를 대조
@@ -215,16 +215,16 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
   }
 });
 
-// 문제 id에 해당하는 문제 완전 삭제
+// 문제 ID에 해당하는 문제 완전 삭제
 router.delete("/:id", isLoggedIn, async (req, res, next) => {
   // 문제 ID
   const { id } = req.params;
 
   try {
-    // 접속한 사용자의 id를 받아옴
+    // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
-    // 접속한 사용자의 id와 query에 있는 문제의 user_id룰 를 대조
+    // 접속한 사용자의 ID와 query에 있는 문제의 user_id룰 대조
     const question = await Question.findOne({ where: { id: id }, raw: true });
     if (question.user_id !== user_id) {
       return res.status(401).json({
