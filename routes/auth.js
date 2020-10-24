@@ -250,8 +250,6 @@ router.post("/verify-email", isLoggedIn, async (req, res, next) => {
     let expiration_time = new Date(verification_code_in_db.createdAt);
     const DURATION_IN_MINUTES = 3; // 인증 만료 시간 3분
     expiration_time.setMinutes(expiration_time.getMinutes() + DURATION_IN_MINUTES);
-    console.log(expiration_time);
-    console.log(new Date());
 
     // 현재 시간과 비교
     if (expiration_time < new Date()) {
