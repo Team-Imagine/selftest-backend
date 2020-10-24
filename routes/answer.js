@@ -95,7 +95,8 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
 // 문제 ID와 정답 내용을 바탕으로 정답 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  const { content, question_id } = req.body;
+  let { content } = req.body;
+  const { question_id } = req.body;
   try {
     // 동일하거나 유사한 정답이 있는 경우
     // TODO: 동일하거나 유사한 정답 존재시 중복정답 처리
@@ -113,6 +114,9 @@ router.post("/", isLoggedIn, async (req, res, next) => {
         message: "해당 문제 ID에 해당하는 문제가 존재하지 않습니다",
       });
     }
+
+    // 정답 내용에서 스크립트 제거 (XSS 방지)
+    content = sanitizeHtml(content);
 
     // TODO: 생성할 정답 내용이 충분한지 확인
     if (!content) {
@@ -160,7 +164,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 // 정답 ID에 해당하는 정답 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
   const { id } = req.params;
-  const { content } = req.body;
+  let { content } = req.body;
 
   try {
     // 접속한 사용자의 ID를 받아옴
@@ -175,6 +179,9 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
         message: "자신이 업로드한 정답만 내용을 수정할 수 있습니다",
       });
     }
+
+    // 정답 내용에서 스크립트 제거 (XSS 방지)
+    content = sanitizeHtml(content);
 
     // TODO: 수정할 정답 내용이 존재하는지 확인
     if (!content) {

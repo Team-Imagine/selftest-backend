@@ -15,6 +15,7 @@ const {
   Course,
 } = require("../models");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const sanitizeHtml = require("sanitize-html");
 
 // 페이지네이션을 이용해 문제 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -110,7 +111,8 @@ router.get("/:id", async (req, res, next) => {
 
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  const { content, course_title } = req.body;
+  let { content } = req.body;
+  const { course_title } = req.body;
   try {
     // 동일하거나 유사한 문제가 있는 경우
     // TODO: 동일하거나 유사한 문제 존재시 중복문제 또는 복수정답 처리
@@ -128,6 +130,9 @@ router.post("/", isLoggedIn, async (req, res, next) => {
         message: "해당 과목 이름에 해당하는 과목이 존재하지 않습니다",
       });
     }
+
+    // 문제 내용에서 스크립트 제거 (XSS 방지)
+    content = sanitizeHtml(content);
 
     // TODO: 생성할 문제 내용이 충분한지 확인
     if (!content) {
@@ -175,7 +180,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 // 문제 ID에 해당하는 문제 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
   const { id } = req.params;
-  const { content } = req.body;
+  let { content } = req.body;
   try {
     // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
@@ -189,6 +194,9 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
         message: "자신이 업로드한 문제만 내용을 수정할 수 있습니다",
       });
     }
+
+    // 문제 내용에서 스크립트 제거 (XSS 방지)
+    content = sanitizeHtml(content);
 
     // TODO: 수정할 문제 내용이 존재하는지 확인
     if (!content) {
