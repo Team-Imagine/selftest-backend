@@ -3,7 +3,11 @@ var router = express.Router();
 const { User, Question, Answer, LikeableEntity, Like, CommentableEntity, Comment } = require("../models");
 const Op = require("sequelize").Op;
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { getSortOptions } = require("./bin/get_sort_options");
 const sanitizeHtml = require("sanitize-html");
+
+// 정렬이 가능한 컬럼 정의
+const sortableColumns = ["id", "content", "blocked", "created_at"];
 
 // 문제 ID에 따른 정답 정보를 가져옴
 router.get("/", isLoggedIn, async (req, res, next) => {
@@ -11,8 +15,28 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     // 쿼리 기본값
     let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
-    let question_id = req.query.question_id;
-    let q_answer_content = req.query.q_answer_content;
+    let question_id = req.query.question_id; // 문제 ID
+    let q_answer_content = req.query.q_answer_content; // 정답 내용 검색어
+    let sort = req.query.sort; // 정렬 옵션
+
+    // 정렬 옵션 설정
+    let sortOptions = getSortOptions(sort);
+
+    if (!sortableColumns.includes(sortOptions.column)) {
+      return res.status(400).json({
+        success: false,
+        error: "requestFails",
+        message: "정렬에 필요한 컬럼 이름이 잘못됐습니다",
+      });
+    }
+
+    if (sortOptions.order !== "asc" && sortOptions.order !== "desc") {
+      return res.status(400).json({
+        success: false,
+        error: "requestFails",
+        message: "정렬에 필요한 정렬 순서명이 잘못됐습니다",
+      });
+    }
 
     let queryOptions = {
       attributes: ["id", "content", "blocked", "createdAt"],
@@ -21,6 +45,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
         { model: User, attributes: ["username"] },
         { model: Question, attributes: ["id"] },
       ],
+      order: [[sortOptions.column, sortOptions.order]],
       offset: +page - 1,
       limit: +per_page,
     };
