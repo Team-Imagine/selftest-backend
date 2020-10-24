@@ -12,6 +12,7 @@ const freshnessRouter = require("./freshness");
 const likeRouter = require("./like");
 const difficultyRouter = require("./difficulty");
 const commentRouter = require("./comment");
+const testSetRouter = require("./testset");
 
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
@@ -23,5 +24,6 @@ router.use("/freshness", freshnessRouter);
 router.use("/like", likeRouter);
 router.use("/difficulty", difficultyRouter);
 router.use("/comment", commentRouter);
+router.use("/testset", testSetRouter);
 
 module.exports = router;
