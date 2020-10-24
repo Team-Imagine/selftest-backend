@@ -26,7 +26,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     // 문제 ID를 전달받았다면 문제 ID로 찾기
     if (question_id) {
       const question = await Question.findOne({
-        attributes: ["id", "title"],
+        attributes: ["id"],
         where: { id: question_id },
       });
 
