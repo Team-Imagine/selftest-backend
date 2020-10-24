@@ -46,7 +46,7 @@ router.get("/", async (req, res, next) => {
         return res.status(400).json({
           success: false,
           error: "entryNotExists",
-          message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다.",
+          message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다",
         });
       }
       queryOptions.where.course_id = course.id;
@@ -90,7 +90,7 @@ router.get("/:id", async (req, res, next) => {
       return res.json({
         success: false,
         error: "entryNotExists",
-        message: "해당 id에 해당하는 문제가 존재하지 않습니다",
+        message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
       });
     }
 
@@ -103,7 +103,7 @@ router.get("/:id", async (req, res, next) => {
     return res.json({
       success: false,
       error: "entryNotExists",
-      message: "해당 id에 해당하는 문제가 존재하지 않습니다",
+      message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
     });
   }
 });
@@ -122,7 +122,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     // 주어진 강의 이름에 해당하는 강의가 존재하는지 확인
     const course = await Course.findOne({ where: { title: course_title } });
     if (!course) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         error: "entryNotExists",
         message: "해당 과목 이름에 해당하는 과목이 존재하지 않습니다",
@@ -134,7 +134,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: "contentNotEnough",
-        message: "수정할 문제 내용이 부족합니다",
+        message: "생성할 문제 내용이 부족합니다",
       });
     }
 
@@ -164,7 +164,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       error: "requestFails",
       message: "문제를 등록하는 데 실패했습니다",
@@ -183,7 +183,7 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
     // 접속한 사용자의 ID와 query에 있는 문제의 user_id룰 를 대조
     const question = await Question.findOne({ where: { id: id } });
     if (question.user_id !== user_id) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         error: "userMismatches",
         message: "자신이 업로드한 문제만 내용을 수정할 수 있습니다",
@@ -207,10 +207,10 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       error: "entryNotExists",
-      message: "해당 id를 가진 문제가 존재하지 않습니다",
+      message: "해당 ID를 가진 문제가 존재하지 않습니다",
     });
   }
 });
@@ -278,10 +278,10 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       error: "entryNotExists",
-      message: "해당 id를 가진 문제가 존재하지 않습니다",
+      message: "해당 ID를 가진 문제가 존재하지 않습니다",
     });
   }
 });
