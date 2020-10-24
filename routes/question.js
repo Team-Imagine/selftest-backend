@@ -94,7 +94,7 @@ router.get("/:id", async (req, res, next) => {
       });
     }
 
-    return res.status(200).json({
+    return res.json({
       success: true,
       question,
     });
@@ -180,8 +180,8 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
     // 접속한 사용자의 id를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
-    // 접속한 사용자의 id와 query에 있는 문제의 user_id룰 를 대조
-    const question = await Question.findOne({ where: { id: req.params.id } });
+    // 접속한 사용자의 ID와 query에 있는 문제의 user_id룰 를 대조
+    const question = await Question.findOne({ where: { id: id } });
     if (question.user_id !== user_id) {
       return res.status(400).json({
         success: false,
@@ -200,9 +200,10 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
     }
 
     await Question.update({ content }, { where: { id } });
-    return res.status(200).json({
+    return res.json({
       success: true,
       message: "문제 내용을 성공적으로 갱신했습니다",
+      question: { id: question.id },
     });
   } catch (error) {
     console.error(error);
@@ -216,12 +217,15 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
 
 // 문제 id에 해당하는 문제 완전 삭제
 router.delete("/:id", isLoggedIn, async (req, res, next) => {
+  // 문제 ID
+  const { id } = req.params;
+
   try {
     // 접속한 사용자의 id를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
     // 접속한 사용자의 id와 query에 있는 문제의 user_id룰 를 대조
-    const question = await Question.findOne({ where: { id: req.params.id }, raw: true });
+    const question = await Question.findOne({ where: { id: id }, raw: true });
     if (question.user_id !== user_id) {
       return res.status(401).json({
         success: false,
@@ -231,7 +235,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     }
 
     // 문제 삭제
-    const result = await Question.destroy({ where: { id: req.params.id } });
+    const result = await Question.destroy({ where: { id: id } });
 
     // 문제에 달린 댓글 및 평가 일괄 삭제 (좋아요, 신선도, 난이도)
     const q_commentable_entity = await CommentableEntity.findOne({ where: { id: question.commentable_entity_id } });
@@ -266,10 +270,10 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     // 모든 사용자로부터 해당 시험 문제 삭제
     await TestQuestion.destroy({ where: { question_id: question.id } });
 
-    return res.status(200).json({
+    return res.json({
       success: true,
       message: "문제 및 문제에 관련된 정보를 일괄 삭제하는 데 성공했습니다",
-      question: { id: req.params.id },
+      question: { id: id },
       result,
     });
   } catch (error) {
