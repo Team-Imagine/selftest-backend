@@ -108,7 +108,11 @@ const validateJwt = function (req, res) {
                     });
 
                     // refresh 토큰의 expiration 기한을 JWT refresh expiration 기간만큼 초기화/업데이트 (refresh)
-                    let refresh_token_maxage = new Date() + req.app.get("jwt_refresh_expiration");
+                    let refresh_token_maxage = new Date();
+                    refresh_token_maxage.setSeconds(
+                      refresh_token_maxage.getSeconds() + req.app.get("jwt_refresh_expiration")
+                    );
+                    console.log(refresh_token_maxage);
 
                     // Redis에 저장
                     req.client.set(
