@@ -127,7 +127,7 @@ router.post("/", async (req, res, next) => {
     }
 
     const course = await Course.create({
-      title: sanitizedHtml(title),
+      title: sanitizeHtml(title),
       subject_id: subject.id,
     });
     return res.status(200).json({
