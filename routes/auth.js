@@ -94,7 +94,7 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
       // 브라우저 httpOnly 쿠키 설정
       res.cookie("access_token", token, {
         // secure: true,
-        httpOnly: true,
+        httpOnly: false,
       });
       res.cookie("refresh_token", refresh_token, {
         // secure: true,

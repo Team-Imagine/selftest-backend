@@ -132,7 +132,7 @@ const validateJwt = function (req, res) {
                   // 다시 한 번 토큰을 httpOnly 쿠키에 저장
                   res.cookie("access_token", token, {
                     // secure: true,
-                    httpOnly: true,
+                    httpOnly: false,
                   });
                   // 나중에 다시 쓸 수 있게 modified request, response 객체 반환
                   resolve({ res: res, req: req });
