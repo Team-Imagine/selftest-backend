@@ -45,13 +45,14 @@
 
 ## /subject, /course, /question
 
-| 에러 코드 (error)  | 의미                                              |
-| ------------------ | ------------------------------------------------- |
-| entryNotExists     | 해당 entry가 존재하지 않을 경우                   |
-| entryAlreadyExists | 해당 내용의 entry가 이미 존재할 경우              |
-| contentNotEnough   | 내용이 부족할 경우                                |
-| userMismatches     | 로그인한 사용자가 해당 entry의 소유자가 아닐 경우 |
-| requestFails       | 그 외의 상황에서 실패했을 경우                    |
+| 에러 코드 (error)  | 의미                                                         |
+| ------------------ | ------------------------------------------------------------ |
+| entryNotExists     | 해당 entry가 존재하지 않을 경우                              |
+| entryAlreadyExists | 해당 내용의 entry가 이미 존재할 경우                         |
+| contentNotEnough   | 내용이 부족할 경우                                           |
+| userMismatches     | 로그인한 사용자가 해당 entry의 소유자가 아닐 경우            |
+| requestFails       | 그 외의 상황에서 실패했을 경우                               |
+| notEnoughPoint     | 사용자가 문제를 조회하기 위한 포인트가 부족할 경우 (읽을 때마다 1씩 차감) |
 
 
 

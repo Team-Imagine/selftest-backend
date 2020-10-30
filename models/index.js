@@ -2,6 +2,7 @@ const Sequelize = require("sequelize");
 
 const User = require("./user/user");
 const Question = require("./test/question");
+const QuestionViewLog = require("./test/question_view_log");
 const Answer = require("./test/answer");
 const Subject = require("./course/subject");
 const Course = require("./course/course");
@@ -28,6 +29,7 @@ db.sequelize = sequelize;
 
 db.User = User;
 db.Question = Question;
+db.QuestionViewLog = QuestionViewLog;
 db.Answer = Answer;
 db.Subject = Subject;
 db.Course = Course;
@@ -47,6 +49,7 @@ db.VerificationCode = VerificationCode;
 
 User.init(sequelize);
 Question.init(sequelize);
+QuestionViewLog.init(sequelize);
 Answer.init(sequelize);
 Subject.init(sequelize);
 Course.init(sequelize);
@@ -66,6 +69,7 @@ VerificationCode.init(sequelize);
 
 User.associate(db);
 Question.associate(db);
+QuestionViewLog.associate(db);
 Answer.associate(db);
 Subject.associate(db);
 Course.associate(db);

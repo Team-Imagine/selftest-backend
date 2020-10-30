@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const {
-  Question,
   User,
+  Question,
+  QuestionViewLog,
   Answer,
   LikeableEntity,
   CommentableEntity,
@@ -52,7 +53,7 @@ router.get("/", async (req, res, next) => {
     }
 
     let queryOptions = {
-      attributes: ["id", "title", "content", "blocked", "createdAt"],
+      attributes: ["id", "title", "blocked", "createdAt"], // 제목까지만 조회
       where: {},
       include: [
         { model: User, attributes: ["username"] },
@@ -116,7 +117,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // 문제 ID에 따른 문제 정보를 가져옴
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const question = await Question.findOne({
@@ -137,6 +138,34 @@ router.get("/:id", async (req, res, next) => {
         success: false,
         error: "entryNotExists",
         message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
+      });
+    }
+
+    // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
+    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
+    const view_log = await QuestionViewLog.findOne({ where: { user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
+
+    // 조회한 적이 없다면 문제 조회를 기록하고 포인트 차감
+    if (!view_log) {
+      // 사용자의 포인트가 충분한지 확인
+      const user = await User.findOne({ where: { id: user_id } });
+
+      // 포인트가 부족한 경우, 요청 거부
+      if (user.point < 1) {
+        return res.status(400).json({
+          success: false,
+          error: "notEnoughPoint",
+          message: "문제를 조회하기 위한 포인트가 부족합니다",
+        });
+      }
+
+      // 충분한 경우, 사용자 1포인트 차감
+      await user.decrement("point", { by: 1 });
+
+      // 조회 기록
+      await QuestionViewLog.create({
+        question_id: question.id,
+        user_id,
       });
     }
 
@@ -218,6 +247,12 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       { commentable_entity_id: commentable_entity.id, likeable_entity_id: likeable_entity.id },
       { where: { id: question.id } }
     );
+
+    // 본인이 올린 문제는 조회에 포인트가 차감이 되면 안되므로 조회 기록
+    await QuestionViewLog.create({
+      question_id: question.id,
+      user_id,
+    });
 
     return res.json({
       success: true,
