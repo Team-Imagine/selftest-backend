@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 const { Subject, Course } = require("../models");
 const Op = require("sequelize").Op;
+const { isLoggedIn } = require("./middlewares");
 const sanitizeHtml = require("sanitize-html");
 
 // 페이지네이션을 이용해 과목 리스트를 불러옴
@@ -85,7 +86,7 @@ router.get("/:title", async (req, res, next) => {
 });
 
 // 새로운 과목을 등록
-router.post("/", async (req, res, next) => {
+router.post("/", isLoggedIn, async (req, res, next) => {
   const { title } = req.body;
   try {
     // 동일한 과목 이름을 가진 강의가 있는지 확인
