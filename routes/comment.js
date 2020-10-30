@@ -1,72 +1,114 @@
 var express = require("express");
 var router = express.Router();
+const { CommentableEntity, Comment, User } = require("../models");
+const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const sanitizeHtml = require("sanitize-html");
 
-const { Comment } = require("../models");
-
-// 전체 comment List 불러옴
-router.get("/all", async (req, res, next) => {
+router.get("/", isLoggedIn, async (req, res, next) => {
   try {
-    const comments = await Comment.findAll({
-      attributes: ["id", "content", "createdAt", "user_id", "commentable_entity_id"],
-      order: [["id", "DESC"]],
-      // limit: 10, // 10개씩 표시
-    });
+    // 쿼리 기본값
+    let page = req.query.page || 1;
+    let per_page = req.query.per_page || 10;
+    let commentable_entity_id = req.query.commentable_entity_id; // 댓글 객체 ID
+    let username = req.query.username; // 사용자 닉네임
 
-    if (comments.length == 0) {
-      return res.json({
-        success: false,
-        message: "등록된 comment가 없습니다.",
-      });
+    let queryOptions = {
+      attributes: ["id", "content", "createdAt", "updatedAt"],
+      where: {},
+      include: [
+        { model: User, attributes: ["username"], where: {} },
+        { model: CommentableEntity, attributes: ["id", "entity_type"] },
+      ],
+      order: [["createdAt", "ASC"]], // 생성된 순서로 정렬
+      offset: +page - 1,
+      limit: +per_page,
+    };
+
+    // 댓글 객체 ID가 주어졌다면 댓글 객체 ID로 검색
+    if (commentable_entity_id) {
+      queryOptions.where.commentable_entity_id = commentable_entity_id;
     }
-    res.status(200).json({
+
+    // 댓글을 올린 사용자 닉네임이 주어졌다면 사용자 닉네임으로 검색
+    if (username) {
+      queryOptions.include[0].where.username = username;
+    }
+
+    // 댓글 조회
+    const comments = await Comment.findAll(queryOptions);
+
+    return res.json({
       success: true,
-      message: "등록된 comment 목록 조회에 성공했습니다.",
-      commentss,
+      message: "등록된 댓글 목록 조회에 성공했습니다",
+      comments,
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
-      message: "DB 오류",
+      error: "requestFails",
+      message: "요청 오류",
     });
   }
 });
 
-// 해당 유저의 comment List 불러옴
-router.get("/:user_id", async (req, res, next) => {
+// 댓글 ID에 따른 댓글 하나의 정보를 가져옴
+router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
-    const comments = await Comment.findAll({
-      attributes: ["id", "content", "createdAt", "user_id", "commentable_entity_id"],
-      where: { user_id: req.params.user_id },
-      order: [["id", "DESC"]],
-      // limit: 10, // 10개씩 표시
+    const comment = await Comment.findOne({
+      attributes: ["id", "content", "createdAt", "updatedAt"],
+      where: { id: req.params.id },
+      include: [
+        { model: User, attributes: ["username"], where: {} },
+        { model: CommentableEntity, attributes: ["id", "entity_type"] },
+      ],
     });
 
-    if (comments.length == 0) {
-      return res.json({
+    if (!comment) {
+      return res.status(400).json({
         success: false,
-        message: "해당 유저의 등록된 comment가 없습니다.",
+        error: "entryNotExists",
+        message: "해당 ID에 해당하는 댓글이 존재하지 않습니다",
       });
     }
-    res.status(200).json({
+
+    return res.json({
       success: true,
-      message: "해당 유저의 등록된 comment 목록 조회에 성공했습니다.",
-      commentss,
+      message: "등록된 댓글 조회에 성공했습니다",
+      comment,
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
-      message: "DB 오류",
+      error: "requestFails",
+      message: "요청 오류",
     });
   }
 });
 
-// CREATE // take comment from react page & store data to db
-router.post("/", async (req, res, next) => {
-  const { content, user_id, commentable_entity_id } = req.body;
-
+// 로그인한 사용자 ID로 댓글 객체에 댓글을 추가한다
+router.post("/:id", isLoggedIn, async (req, res, next) => {
   try {
+    const commentable_entity_id = req.params.id; // 댓글 객체 ID
+    let content = req.body.content; // 추가할 댓글 내용
+
+    // 접속한 사용자의 ID를 받아옴
+    const user_id = await getLoggedInUserId(req, res);
+
+    // 문제 내용에서 스크립트 제거 (XSS 방지)
+    content = sanitizeHtml(content);
+
+    // 수정할 댓글 내용이 존재하는지 확인
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        error: "contentNotEnough",
+        message: "등록할 댓글 내용이 부족합니다",
+      });
+    }
+
+    // 댓글 등록
     await Comment.create({
       content,
       user_id,
@@ -75,49 +117,97 @@ router.post("/", async (req, res, next) => {
 
     return res.json({
       success: true,
-      message: "comment가 성공적으로 등록되었습니다.",
+      message: "댓글이 성공적으로 등록되었습니다",
     });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
       success: false,
-      message: "DB 오류",
+      error: "requestFails",
+      message: "요청 오류",
     });
   }
 });
 
-router.put("/", async (req, res, next) => {
-  const { content, commentable_entity_id } = req.body;
+// 로그인한 사용자 ID로 댓글 객체의 댓글 하나를 수정한다
+router.put("/:id", isLoggedIn, async (req, res, next) => {
   try {
-    await Comment.update({ comment: content }, { where: { id: commentable_entity_id } });
+    const id = req.params.id; // 댓글 ID
+    let content = req.body.content; // 수정할 댓글 내용
 
-    return res.status(200).json({
+    // 접속한 사용자의 ID를 받아옴
+    const user_id = await getLoggedInUserId(req, res);
+
+    // 접속한 사용자의 ID와 query에 있는 댓글의 user_id룰 를 대조
+    const comment = await Comment.findOne({ where: { id } });
+    if (comment.user_id !== user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "userMismatches",
+        message: "자신이 올린 댓글만 내용을 수정할 수 있습니다",
+      });
+    }
+
+    // 문제 내용에서 스크립트 제거 (XSS 방지)
+    content = sanitizeHtml(content);
+
+    // 수정할 댓글 내용이 존재하는지 확인
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        error: "contentNotEnough",
+        message: "수정할 댓글 내용이 부족합니다",
+      });
+    }
+
+    // 댓글 수정
+    await Comment.update({ content }, { where: { id, user_id } });
+
+    return res.json({
       success: true,
-      message: "comment 내용을 성공적으로 갱신했습니다.",
+      message: "댓글 내용을 성공적으로 수정했습니다",
+      comment: { id: comment.id },
     });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
       success: false,
-      message: "해당 id를 가진 comment가 존재하지 않습니다.",
+      error: "entryNotExists",
+      message: "해당 ID를 가진 댓글이 존재하지 않습니다",
     });
   }
 });
 
-router.delete("/", async (req, res, next) => {
-  const { commentable_entity_id } = req.body;
+router.delete("/:id", async (req, res, next) => {
   try {
-    await Comment.destroy({ where: { id: commentable_entity_id } });
+    const id = req.params.id; // 삭제할 댓글 ID
 
-    return res.status(200).json({
+    // 접속한 사용자의 ID를 받아옴
+    const user_id = await getLoggedInUserId(req, res);
+
+    // 접속한 사용자의 ID와 query에 있는 댓글의 user_id룰 를 대조
+    const comment = await Comment.findOne({ where: { id } });
+    if (comment.user_id !== user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "userMismatches",
+        message: "자신이 올린 댓글만 내용을 삭제할 수 있습니다",
+      });
+    }
+
+    // 댓글 삭제
+    await Comment.destroy({ where: { id, user_id } });
+
+    return res.json({
       success: true,
-      message: "해당 comment를 삭제하는 데 성공했습니다.",
+      message: "해당 댓글을 삭제하는 데 성공했습니다",
     });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
       success: false,
-      message: "해당 id를 가진 comment가 존재하지 않습니다.",
+      error: "entryNotExists",
+      message: "해당 ID를 가진 댓글이 존재하지 않습니다",
     });
   }
 });
