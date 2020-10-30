@@ -143,7 +143,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
     // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
     const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
-    const view_log = await QuestionViewLog.findOne({ where: { user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
+    const view_log = await QuestionViewLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
 
     // 조회한 적이 없다면 문제 조회를 기록하고 포인트 차감
     if (!view_log) {
