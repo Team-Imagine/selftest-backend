@@ -127,11 +127,13 @@ router.get("/:id", async (req, res, next) => {
       include: [
         { model: User, attributes: ["username"] },
         { model: Course, attributes: ["title"] },
+        { model: CommentableEntity, attributes: ["id", "entity_type"] },
+        { model: LikeableEntity, attributes: ["id", "entity_type"] },
       ],
     });
 
     if (!question) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         error: "entryNotExists",
         message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
@@ -140,11 +142,12 @@ router.get("/:id", async (req, res, next) => {
 
     return res.json({
       success: true,
+      message: "등록된 문제 조회에 성공했습니다",
       question,
     });
   } catch (error) {
     console.error(error);
-    return res.json({
+    return res.status(400).json({
       success: false,
       error: "entryNotExists",
       message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
