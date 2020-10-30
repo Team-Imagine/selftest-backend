@@ -72,7 +72,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
           include: [
             {
               model: Question,
-              attributes: ["id", "content", "blocked", "createdAt"],
+              attributes: ["id", "title", "content", "blocked", "createdAt"],
               where: { blocked: false },
               include: [
                 { model: User, attributes: ["username"] },

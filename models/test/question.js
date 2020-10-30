@@ -4,6 +4,11 @@ module.exports = class Question extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {
+        title: {
+          type: Sequelize.STRING(60),
+          allowNull: false,
+          comment: "문제 제목",
+        },
         content: {
           type: Sequelize.TEXT,
           allowNull: false,

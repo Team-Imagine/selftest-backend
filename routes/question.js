@@ -20,7 +20,7 @@ const { getSortOptions } = require("./bin/get_sort_options");
 const sanitizeHtml = require("sanitize-html");
 
 // 정렬이 가능한 컬럼 정의
-const sortableColumns = ["id", "content", "blocked", "created_at"];
+const sortableColumns = ["id", "title", "content", "blocked", "created_at"];
 
 // 페이지네이션을 이용해 문제 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -52,7 +52,7 @@ router.get("/", async (req, res, next) => {
     }
 
     let queryOptions = {
-      attributes: ["id", "content", "blocked", "createdAt"],
+      attributes: ["id", "title", "content", "blocked", "createdAt"],
       where: {},
       include: [
         { model: User, attributes: ["username"] },
@@ -120,7 +120,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const question = await Question.findOne({
-      attributes: ["id", "content", "blocked", "createdAt"],
+      attributes: ["id", "title", "content", "blocked", "createdAt"],
       where: {
         id: req.params.id,
       },
@@ -157,7 +157,7 @@ router.get("/:id", async (req, res, next) => {
 
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  let { content } = req.body;
+  let { title, content } = req.body;
   const { course_title } = req.body;
   try {
     // 동일하거나 유사한 문제가 있는 경우
@@ -178,7 +178,17 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     }
 
     // 문제 내용에서 스크립트 제거 (XSS 방지)
+    title = sanitizeHtml(title);
     content = sanitizeHtml(content);
+
+    // 생성할 문제 제목이 존재하는지 확인
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        error: "contentNotEnough",
+        message: "생성할 문제 제목이 부족합니다",
+      });
+    }
 
     // TODO: 생성할 문제 내용이 충분한지 확인
     if (!content) {
@@ -191,6 +201,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     // 문제 생성
     const question = await Question.create({
+      title,
       content,
       course_id: course.id,
       user_id,
@@ -226,7 +237,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 // 문제 ID에 해당하는 문제 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
   const { id } = req.params;
-  let { content } = req.body;
+  let { title, content } = req.body;
   try {
     // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
@@ -237,12 +248,22 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
       return res.status(401).json({
         success: false,
         error: "userMismatches",
-        message: "자신이 업로드한 문제만 내용을 수정할 수 있습니다",
+        message: "자신이 업로드한 문제만 정보를 수정할 수 있습니다",
       });
     }
 
-    // 문제 내용에서 스크립트 제거 (XSS 방지)
+    // 문제 내용 및 제목에서 스크립트 제거 (XSS 방지)
+    title = sanitizeHtml(title);
     content = sanitizeHtml(content);
+
+    // 수정할 문제 제목이 존재하는지 확인
+    if (!title) {
+      return res.status(400).json({
+        success: false,
+        error: "contentNotEnough",
+        message: "수정할 문제 제목이 부족합니다",
+      });
+    }
 
     // TODO: 수정할 문제 내용이 존재하는지 확인
     if (!content) {
@@ -253,10 +274,10 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    await Question.update({ content }, { where: { id } });
+    await Question.update({ title, content }, { where: { id } });
     return res.json({
       success: true,
-      message: "문제 내용을 성공적으로 갱신했습니다",
+      message: "문제 정보를 성공적으로 갱신했습니다",
       question: { id: question.id },
     });
   } catch (error) {
