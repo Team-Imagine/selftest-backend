@@ -167,11 +167,19 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
         question_id: question.id,
         user_id,
       });
+
+      return res.json({
+        success: true,
+        message: "등록된 문제 조회에 성공했습니다",
+        point_decrement: 1,
+        question,
+      });
     }
 
     return res.json({
       success: true,
       message: "등록된 문제 조회에 성공했습니다",
+      point_decrement: 0,
       question,
     });
   } catch (error) {
