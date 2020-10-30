@@ -13,6 +13,7 @@ const likeRouter = require("./like");
 const difficultyRouter = require("./difficulty");
 const commentRouter = require("./comment");
 const testSetRouter = require("./testset");
+const imageRouter = require("./image");
 
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
@@ -25,5 +26,6 @@ router.use("/like", likeRouter);
 router.use("/difficulty", difficultyRouter);
 router.use("/comment", commentRouter);
 router.use("/testset", testSetRouter);
+router.use("/image", imageRouter);
 
 module.exports = router;
