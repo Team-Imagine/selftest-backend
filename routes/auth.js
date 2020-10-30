@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const sanitizeHtml = require("sanitize-html");
 const { User, VerificationCode } = require("../models");
 const { isLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
 const sendVerificationEMail = require("./bin/send_email").sendVerificationEmail;
@@ -9,17 +10,26 @@ require("dotenv").config();
 const router = express.Router();
 
 router.post("/register", isNotLoggedIn, async (req, res, next) => {
-  const { email, username, password, first_name, last_name, phone_number } = req.body;
-
-  if (!email || !username || !password || !first_name || !last_name) {
-    return res.status(400).json({
-      success: false,
-      error: "formFieldsEmpty",
-      message: "양식 (이메일, 닉네임, 비밀번호, 성, 이름)이 비어있어 가입에 실패했습니다",
-    });
-  }
+  let { email, username, password, first_name, last_name, phone_number } = req.body;
 
   try {
+    // 양식 데이터 sanitize
+    email = sanitizeHtml(email);
+    username = sanitizeHtml(username);
+    password = sanitizeHtml(password);
+    first_name = sanitizeHtml(first_name);
+    last_name = sanitizeHtml(last_name);
+    phone_number = sanitizeHtml(phone_number);
+
+    // 내용이 비어있는 경우, 요청 거부
+    if (!email || !username || !password || !first_name || !last_name) {
+      return res.status(400).json({
+        success: false,
+        error: "formFieldsEmpty",
+        message: "양식 (이메일, 닉네임, 비밀번호, 성, 이름)이 비어있어 가입에 실패했습니다",
+      });
+    }
+
     // 동일한 이메일로 가입한 사용자가 있는지 확인
     let existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
