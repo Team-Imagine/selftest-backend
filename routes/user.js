@@ -47,7 +47,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     // 조회할 사용자 정보 조회
     const user = await User.findOne({
       where: { id: user_id },
-      attributes: ["id", "username", "point", "active", "created_at"],
+      attributes: ["id", "username", "point", "active", "verified", "created_at"],
       raw: true,
     });
 
