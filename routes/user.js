@@ -1,10 +1,10 @@
 var express = require("express");
 var router = express.Router();
 const { User } = require("../models");
-const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { isJustLoggedIn, getLoggedInUserId } = require("./middlewares");
 
 // 사용자 정보 조회
-router.get("/:username", isLoggedIn, async (req, res, next) => {
+router.get("/:username", isJustLoggedIn, async (req, res, next) => {
   const { username } = req.params; // 조회할 사용자 이름
   try {
     // 조회할 사용자 정보 조회
@@ -39,7 +39,7 @@ router.get("/:username", isLoggedIn, async (req, res, next) => {
 });
 
 // 로그인한 사용자 정보 조회
-router.get("/", isLoggedIn, async (req, res, next) => {
+router.get("/", isJustLoggedIn, async (req, res, next) => {
   try {
     // 로그인한 사용자 ID
     const user_id = await getLoggedInUserId(req, res);
