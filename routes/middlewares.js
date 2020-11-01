@@ -2,6 +2,32 @@ const jwt = require("jsonwebtoken");
 const { PointLog, User, Freshness, Like, Difficulty, PenaltyLog } = require("../models");
 require("dotenv").config();
 
+// 사용자가 정지 상태인지, 이메일 인증은 받았는지 여부는 검사하지 않고 로그인 되어 있는지 검사
+const isJustLoggedIn = async function (req, res, next) {
+  try {
+    const user = await getLoggedInUserInfo(req, res);
+
+    // 로그인 되어있지 않은 경우
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotLoggedIn",
+        message: "로그인 되어 있지 않습니다",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error(error);
+    return res.status(401).json({
+      success: false,
+      error: error,
+      message: "로그인 되어 있지 않습니다",
+    });
+  }
+};
+
+// 로그인 되어 있는지, 정지 상태거나 이메일 인증을 받지 않은 것은 아닌지 검사
 const isLoggedIn = async function (req, res, next) {
   try {
     const user = await getLoggedInUserInfo(req, res);
@@ -493,6 +519,7 @@ const readTotalPointLog = async (req, res) => {
 };
 
 module.exports = {
+  isJustLoggedIn,
   isLoggedIn,
   isNotLoggedIn,
   generateRefreshToken,
