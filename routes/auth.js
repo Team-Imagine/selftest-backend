@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const sanitizeHtml = require("sanitize-html");
 const { User, VerificationCode } = require("../models");
-const { isLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
+const { isLoggedIn, isJustLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
 const sendVerificationEMail = require("./bin/send_email").sendVerificationEmail;
 require("dotenv").config();
 
@@ -144,7 +144,7 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
 });
 
 // 로그아웃 - req.body의 id를 이용해 로그아웃
-router.post("/logout", isLoggedIn, async (req, res, next) => {
+router.post("/logout", isJustLoggedIn, async (req, res, next) => {
   try {
     // 로그인 검증
     const user_id = await getLoggedInUserId(req, res); // 현재 로그인한 사용자 ID
@@ -186,7 +186,7 @@ router.post("/profile", (req, res, next) => {
 });
 
 // 가입 인증 이메일 발송
-router.post("/send-verification-email", isLoggedIn, async (req, res, next) => {
+router.post("/send-verification-email", isJustLoggedIn, async (req, res, next) => {
   try {
     // 로그인 검증
     const user_id = await getLoggedInUserId(req, res); // 현재 로그인한 사용자 ID
@@ -229,7 +229,7 @@ router.post("/send-verification-email", isLoggedIn, async (req, res, next) => {
 
 // 사용자 이메일 인증 코드 대조
 // req.body에 verification_code (인증코드) 필요
-router.post("/verify-email", isLoggedIn, async (req, res, next) => {
+router.post("/verify-email", isJustLoggedIn, async (req, res, next) => {
   const { verification_code } = req.body; // 가입 인증 코드
 
   try {
