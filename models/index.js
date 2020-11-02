@@ -1,70 +1,90 @@
-const path = require("path");
 const Sequelize = require("sequelize");
+
+const User = require("./user/user");
+const Question = require("./test/question");
+const QuestionViewLog = require("./test/question_view_log");
+const Answer = require("./test/answer");
+const Subject = require("./course/subject");
+const Course = require("./course/course");
+const Bookmark = require("./user/bookmark");
+const TestSet = require("./test/test_set");
+const TestQuestion = require("./test/test_question");
+const LikeableEntity = require("./evaluation/likeable_entity");
+const Like = require("./evaluation/like");
+const Difficulty = require("./evaluation/difficulty");
+const Freshness = require("./evaluation/freshness");
+const CommentableEntity = require("./comment/commentable_entity");
+const Comment = require("./comment/comment");
+const PointLog = require("./user/point_log");
+const PenaltyLog = require("./user/penalty_log");
+const Attendance = require("./user/attendance");
+const VerificationCode = require("./user/verification_code");
 
 const env = process.env.NODE_ENV || "development";
 const config = require("../config/config")[env];
 const db = {};
 
 const sequelize = new Sequelize(config.database, config.username, config.password, config);
-
 db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-db.User = require("./user/user")(sequelize, Sequelize);
-db.Question = require("./test/question")(sequelize, Sequelize);
-db.Answer = require("./test/answer")(sequelize, Sequelize);
-db.Subject = require("./course/subject")(sequelize, Sequelize);
-db.Course = require("./course/course")(sequelize, Sequelize);
-db.Bookmark = require("./user/bookmark")(sequelize, Sequelize);
-db.TestSet = require("./test/test_set")(sequelize, Sequelize);
-db.TestQuestion = require("./test/test_question")(sequelize, Sequelize);
-db.EvaluatableEntity = require("./evaluation/evaluatable_entity")(sequelize, Sequelize);
-db.Evaluation = require("./evaluation/evaluation")(sequelize, Sequelize);
-db.Difficulty = require("./evaluation/difficulty")(sequelize, Sequelize);
-db.CommentableEntity = require("./comment/commentable_entity")(sequelize, Sequelize);
-db.Comment = require("./comment/comment")(sequelize, Sequelize);
-// db.Point = require("./user/point")(sequelize, Sequelize);
-// db.Penalty = require("./user/penalty")(sequelize, Sequelize);
 
-// Define database relationship
-db.Subject.hasMany(db.Course, { foreignKey: "subject_id", sourceKey: "id" });
-db.Course.belongsTo(db.Subject, { foreignKey: "subject_id", targetKey: "id" });
-db.Course.hasMany(db.Question, { foreignKey: "course_id", sourceKey: "id" });
-db.Question.belongsTo(db.Course, { foreignKey: "course_id", targetKey: "id" });
+db.User = User;
+db.Question = Question;
+db.QuestionViewLog = QuestionViewLog;
+db.Answer = Answer;
+db.Subject = Subject;
+db.Course = Course;
+db.Bookmark = Bookmark;
+db.TestSet = TestSet;
+db.TestQuestion = TestQuestion;
+db.LikeableEntity = LikeableEntity;
+db.Like = Like;
+db.Difficulty = Difficulty;
+db.Freshness = Freshness;
+db.CommentableEntity = CommentableEntity;
+db.Comment = Comment;
+db.PointLog = PointLog;
+db.PenaltyLog = PenaltyLog;
+db.Attendance = Attendance;
+db.VerificationCode = VerificationCode;
 
-db.User.hasMany(db.TestSet, { foreignKey: "user_id", sourceKey: "id" });
-db.TestSet.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
-db.TestSet.hasMany(db.TestQuestion, { foreignKey: "test_set_id", sourceKey: "id" });
-db.TestQuestion.belongsTo(db.User, { foreignKey: "test_set_id", targetKey: "id" });
-db.TestQuestion.belongsTo(db.TestQuestion, { foreignKey: "question_id", targetKey: "id" });
+User.init(sequelize);
+Question.init(sequelize);
+QuestionViewLog.init(sequelize);
+Answer.init(sequelize);
+Subject.init(sequelize);
+Course.init(sequelize);
+Bookmark.init(sequelize);
+TestSet.init(sequelize);
+TestQuestion.init(sequelize);
+LikeableEntity.init(sequelize);
+Like.init(sequelize);
+Difficulty.init(sequelize);
+Freshness.init(sequelize);
+CommentableEntity.init(sequelize);
+Comment.init(sequelize);
+PointLog.init(sequelize);
+PenaltyLog.init(sequelize);
+Attendance.init(sequelize);
+VerificationCode.init(sequelize);
 
-db.User.hasMany(db.Question, { foreignKey: "user_id", sourceKey: "id" });
-db.Question.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
-db.Question.hasMany(db.Answer, { foreignKey: "question_id", sourceKey: "id" });
-db.Question.belongsTo(db.CommentableEntity, { foreignKey: "commentable_entity_id", targetKey: "id" });
-db.Question.belongsTo(db.EvaluatableEntity, { foreignKey: "evaluatable_entity_id", targetKey: "id" });
-
-db.User.hasMany(db.Answer, { foreignKey: "user_id", sourceKey: "id" });
-db.Answer.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
-db.Answer.belongsTo(db.Question, { foreignKey: "question_id", targetKey: "id" });
-db.Answer.belongsTo(db.CommentableEntity, { foreignKey: "commentable_entity_id", targetKey: "id" });
-db.Answer.belongsTo(db.EvaluatableEntity, { foreignKey: "evaluatable_entity_id", targetKey: "id" });
-
-db.User.hasMany(db.Bookmark, { foreignKey: "user_id", sourceKey: "id" });
-db.Bookmark.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
-db.Bookmark.belongsTo(db.Question, { foreignKey: "question_id", targetKey: "id" });
-
-db.CommentableEntity.hasMany(db.Comment, { foreignKey: "commentable_entity_id", sourceKey: "id" });
-db.Comment.belongsTo(db.CommentableEntity, { foreignKey: "commentable_entity_id", targetKey: "id" });
-db.User.hasMany(db.Comment, { foreignKey: "user_id", sourceKey: "id" });
-db.Comment.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
-
-db.EvaluatableEntity.hasMany(db.Evaluation, { foreignKey: "evaluatable_entity_id", sourceKey: "id" });
-db.Evaluation.belongsTo(db.EvaluatableEntity, { foreignKey: "evaluatable_entity_id", targetKey: "id" });
-db.User.hasMany(db.Evaluation, { foreignKey: "user_id", sourceKey: "id" });
-db.Evaluation.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
-
-db.User.hasMany(db.Difficulty, { foreignKey: "user_id", sourceKey: "id" });
-db.Difficulty.belongsTo(db.User, { foreignKey: "user_id", targetKey: "id" });
-db.Difficulty.belongsTo(db.Question, { foreignKey: "question_id", targetKey: "id" });
+User.associate(db);
+Question.associate(db);
+QuestionViewLog.associate(db);
+Answer.associate(db);
+Subject.associate(db);
+Course.associate(db);
+Bookmark.associate(db);
+TestSet.associate(db);
+TestQuestion.associate(db);
+LikeableEntity.associate(db);
+Like.associate(db);
+Difficulty.associate(db);
+Freshness.associate(db);
+CommentableEntity.associate(db);
+Comment.associate(db);
+PointLog.associate(db);
+PenaltyLog.associate(db);
+Attendance.associate(db);
+VerificationCode.associate(db);
 
 module.exports = db;

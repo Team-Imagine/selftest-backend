@@ -1,14 +1,13 @@
 const Sequelize = require("sequelize");
 
-module.exports = class Course extends Sequelize.Model {
+module.exports = class LikeableEntity extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {
-        title: {
-          type: Sequelize.STRING(60),
+        entity_type: {
+          type: Sequelize.STRING(20),
           allowNull: false,
-          unique: true,
-          comment: "강의 이름",
+          comment: "좋아요 객체 타입",
         },
       },
       {
@@ -16,24 +15,17 @@ module.exports = class Course extends Sequelize.Model {
         timestamps: true,
         paranoid: true,
         underscored: true,
-        modelName: "course",
-        tableName: "courses",
+        modelName: "likeable_entity",
+        tableName: "likeable_entities",
         charset: "utf8",
         collate: "utf8_general_ci",
       }
     );
   }
   static associate(db) {
-    db.Course.belongsTo(db.Subject, {
+    db.LikeableEntity.hasMany(db.Like, {
       foreignKey: {
-        name: "subject_id",
-        allowNull: false,
-      },
-      targetKey: "id",
-    });
-    db.Course.hasMany(db.Question, {
-      foreignKey: {
-        name: "course_id",
+        name: "likeable_entity_id",
         allowNull: false,
       },
       sourceKey: "id",

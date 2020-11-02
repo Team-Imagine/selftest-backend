@@ -1,39 +1,31 @@
 const Sequelize = require("sequelize");
 
-module.exports = class Course extends Sequelize.Model {
+module.exports = class VerificationCode extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {
-        title: {
-          type: Sequelize.STRING(60),
+        code: {
+          type: Sequelize.STRING(100),
           allowNull: false,
           unique: true,
-          comment: "강의 이름",
+          comment: "이메일 인증 코드",
         },
       },
       {
         sequelize,
         timestamps: true,
-        paranoid: true,
         underscored: true,
-        modelName: "course",
-        tableName: "courses",
+        modelName: "verification_code",
+        tableName: "verification_codes",
         charset: "utf8",
         collate: "utf8_general_ci",
       }
     );
   }
   static associate(db) {
-    db.Course.belongsTo(db.Subject, {
+    db.VerificationCode.belongsTo(db.User, {
       foreignKey: {
-        name: "subject_id",
-        allowNull: false,
-      },
-      targetKey: "id",
-    });
-    db.Course.hasMany(db.Question, {
-      foreignKey: {
-        name: "course_id",
+        name: "user_id",
         allowNull: false,
       },
       sourceKey: "id",

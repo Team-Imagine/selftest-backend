@@ -6,6 +6,12 @@
 
 - 링크 참고: https://jhnyang.tistory.com/257
 
+### Redis 설치 (로그인/로그아웃 구현)
+
+- 윈도우는 비공식 지원
+- GitHub 저장소에서 release (stable) 중 .msi 파일 다운로드 받으면 됨
+- 링크 참고: https://gofnrk.tistory.com/35?category=768900
+
 ### 프로젝트 모듈 설치
 
 - 명령창에서 실행
@@ -21,6 +27,11 @@ npm install
 ```
 COOKIE_SECRET=selftestdevsecret
 SEQUELIZE_PASSWORD=MariaDB 루트 패스워드
+JWT_SECRET=selftesttokensecret
+REDIS_HOST=localhost
+REDIS_PORT=6379
+VERIFICATION_EMAIL=SelfTest 인증용 이메일
+VERIFICATION_EMAIL_PASSWORD=SelftTest 인증용 이메일 비밀번호
 ```
 
 - `MariaDB 루트 패스워드` 부분에 본인이 설정한 패스워드 입력하고 저장하면 된다.

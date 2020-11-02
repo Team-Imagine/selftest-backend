@@ -1,18 +1,35 @@
-module.exports = (sequelize, DataTypes) => {
-  return sequelize.define(
-    "commentable_entity",
-    {
-      entity_type: {
-        type: DataTypes.STRING(20),
-        allowNull: false,
-        comment: "댓글 객체 타입",
+const Sequelize = require("sequelize");
+
+module.exports = class CommentableEntity extends Sequelize.Model {
+  static init(sequelize) {
+    return super.init(
+      {
+        entity_type: {
+          type: Sequelize.STRING(20),
+          allowNull: false,
+          comment: "댓글 객체 타입",
+        },
       },
-    },
-    {
-      timestamps: true,
-      paranoid: true,
-      charset: "utf8",
-      collate: "utf8_general_ci",
-    }
-  );
+      {
+        sequelize,
+        timestamps: true,
+        paranoid: true,
+        underscored: true,
+        modelName: "commentable_entity",
+        tableName: "commentable_entities",
+        charset: "utf8",
+        collate: "utf8_general_ci",
+      }
+    );
+  }
+  static associate(db) {
+    db.CommentableEntity.hasMany(db.Comment, {
+      foreignKey: {
+        name: "commentable_entity_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+  }
 };

@@ -1,6 +1,6 @@
 const Sequelize = require("sequelize");
 
-module.exports = class Bookmark extends Sequelize.Model {
+module.exports = class QuestionViewLog extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {},
@@ -8,24 +8,24 @@ module.exports = class Bookmark extends Sequelize.Model {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "bookmark",
-        tableName: "bookmarks",
+        modelName: "question_view_log",
+        tableName: "question_view_logs",
         charset: "utf8",
         collate: "utf8_general_ci",
       }
     );
   }
   static associate(db) {
-    db.Bookmark.belongsTo(db.User, {
+    db.QuestionViewLog.belongsTo(db.Question, {
       foreignKey: {
-        name: "user_id",
+        name: "question_id",
         allowNull: false,
       },
       targetKey: "id",
     });
-    db.Bookmark.belongsTo(db.Question, {
+    db.QuestionViewLog.belongsTo(db.User, {
       foreignKey: {
-        name: "question_id",
+        name: "user_id",
         allowNull: false,
       },
       targetKey: "id",

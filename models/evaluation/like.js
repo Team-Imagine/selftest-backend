@@ -1,31 +1,37 @@
 const Sequelize = require("sequelize");
 
-module.exports = class Bookmark extends Sequelize.Model {
+module.exports = class Like extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
-      {},
+      {
+        good: {
+          type: Sequelize.INTEGER,
+          default_value: 0,
+          comment: "좋아요",
+        },
+      },
       {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "bookmark",
-        tableName: "bookmarks",
+        modelName: "like",
+        tableName: "likes",
         charset: "utf8",
         collate: "utf8_general_ci",
       }
     );
   }
   static associate(db) {
-    db.Bookmark.belongsTo(db.User, {
+    db.Like.belongsTo(db.LikeableEntity, {
       foreignKey: {
-        name: "user_id",
+        name: "likeable_entity_id",
         allowNull: false,
       },
       targetKey: "id",
     });
-    db.Bookmark.belongsTo(db.Question, {
+    db.Like.belongsTo(db.User, {
       foreignKey: {
-        name: "question_id",
+        name: "user_id",
         allowNull: false,
       },
       targetKey: "id",

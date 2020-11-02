@@ -1,39 +1,54 @@
-const createError = require("http-errors");
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
 const session = require("express-session");
-const flash = require("connect-flash");
 const passport = require("passport");
+const redis = require("./redis_instance");
+const client = redis.getConnection();
+const cors = require("cors");
 require("dotenv").config();
 
 // routers
-const indexRouter = require("./routes/index");
-const authRouter = require("./routes/auth");
-const userRouter = require("./routes/user");
-const subjectRouter = require("./routes/subject");
-const courseRouter = require("./routes/course");
-const questionRouter = require("./routes/question");
-const answerRouter = require("./routes/answer");
+const apiRouter = require("./routes/api");
 
 const { sequelize } = require("./models");
-const passportConfig = require("./passport");
+const passportConfig = require("./config/passport");
 
 const app = express();
-sequelize.sync();
+app.use(cors());
+
+app.set("port", process.env.PORT || 8002);
+sequelize
+  .sync({ force: false })
+  .then(() => {
+    console.log("데이터베이스 연결 성공");
+  })
+  .catch((err) => {
+    console.error(err);
+  });
 passportConfig(passport);
 
 // express variables
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "pug");
-app.set("port", process.env.PORT || 8002);
+
+// JWT variables
+app.set("jwt_expiration", 60 * 10);
+app.set("jwt_refresh_expiration", 60 * 60 * 24 * 30);
 
 app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// Redis 미들웨어 - req.client로 클라이언트를 가져올 수 있음
+app.use((req, res, next) => {
+  req.client = client;
+  next();
+});
+
 app.use(
   session({
     resave: false,
@@ -45,28 +60,23 @@ app.use(
     },
   })
 );
-app.use(flash());
 app.use(passport.initialize());
-app.use(passport.session());
 
-app.use("/", indexRouter);
-app.use("/auth", authRouter);
-app.use("/user", userRouter);
-app.use("/subject", subjectRouter);
-app.use("/course", courseRouter);
-app.use("/question", questionRouter);
-app.use("/answer", answerRouter);
+// routers
+app.use("/api", apiRouter);
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
+app.use((req, res, next) => {
+  const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
+  error.status = 404;
+  next(error);
 });
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use((err, req, res, next) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
+  res.locals.error = req.app.get("env") !== "production" ? err : {};
 
   // render the error page
   res.status(err.status || 500);
