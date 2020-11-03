@@ -9,6 +9,12 @@ module.exports = class Question extends Sequelize.Model {
           allowNull: false,
           comment: "문제 제목",
         },
+        type: {
+          type: Sequelize.STRING(20),
+          allowNull: false,
+          defaultValue: "essay", // 기본값은 서술형
+          comment: "문제 유형 (multiplce_choice / short_answer / essay)",
+        },
         content: {
           type: Sequelize.TEXT,
           allowNull: false,
