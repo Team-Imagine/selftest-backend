@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-const { User, Question, Answer, LikeableEntity, Like, CommentableEntity, Comment } = require("../models");
+const { User, Question, Answer, LikeableEntity, Like } = require("../models");
 const Op = require("sequelize").Op;
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { getSortOptions } = require("./bin/get_sort_options");
@@ -178,17 +178,11 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       user_id,
     });
 
-    // 생성한 정답에 댓글 및 좋아요 entity id 연결
-    const commentable_entity = await CommentableEntity.create({
-      entity_type: "answer",
-    });
+    // 생성한 정답에 좋아요 entity id 연결
     const likeable_entity = await LikeableEntity.create({
       entity_type: "answer",
     });
-    await Answer.update(
-      { commentable_entity_id: commentable_entity.id, likeable_entity_id: likeable_entity.id },
-      { where: { id: answer.id } }
-    );
+    await Answer.update({ likeable_entity_id: likeable_entity.id }, { where: { id: answer.id } });
 
     return res.json({
       success: true,
@@ -275,11 +269,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     // 정답 삭제
     const result = await Answer.destroy({ where: { id: id } });
 
-    // 정답에 달린 댓글 및 평가 일괄 삭제 (좋아요)
-    const q_commentable_entity = await CommentableEntity.findOne({ where: { id: answer.commentable_entity_id } });
-    await CommentableEntity.destroy({ where: { id: q_commentable_entity.id } });
-    await Comment.destroy({ where: { commentable_entity_id: q_commentable_entity.id } });
-
+    // 정답에 달린 평가 일괄 삭제 (좋아요)
     const q_likeable_entity = await LikeableEntity.findOne({ where: { id: answer.likeable_entity_id } });
     await LikeableEntity.destroy({ where: { id: q_likeable_entity.id } });
     await Like.destroy({ where: { likeable_entity_id: q_likeable_entity.id } });
