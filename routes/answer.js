@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-const { User, Question, Answer, LikeableEntity, Like } = require("../models");
+const { User, Question, Answer, LikeableEntity, Like, MultipleChoiceItem } = require("../models");
 const Op = require("sequelize").Op;
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { getSortOptions } = require("./bin/get_sort_options");
@@ -43,7 +43,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       where: {},
       include: [
         { model: User, attributes: ["username"] },
-        { model: Question, attributes: ["id"] },
+        { model: Question, attributes: ["id", "type"] },
       ],
       order: [[sortOptions.column, sortOptions.order]],
       offset: +page - 1,
@@ -86,6 +86,14 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     // 문제 목록 조회
     const answers = await Answer.findAll(queryOptions);
 
+    for (let j = 0; j < answers.length; j++) {
+      // 객관식일 경우, 보기에서 정답을 찾음
+      if (answers[j].question.type === "multiple_choice") {
+        items = await MultipleChoiceItem.findAll({ where: { id: parseInt(items[i]), checked: true }, raw: true });
+        answers[j].content = items;
+      }
+    }
+
     return res.json({
       success: true,
       message: "해당 문제 ID로 등록된 정답 목록 조회에 성공했습니다",
@@ -101,17 +109,17 @@ router.get("/", isLoggedIn, async (req, res, next) => {
   }
 });
 
-// 정답 ID에 따른 정답 정보를 가져옴
+// 정답 ID에 따른 정답 정보를 가져옴 (객관식 제외)
 router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
-    const answer = await Answer.findOne({
+    let answer = await Answer.findOne({
       attributes: ["id", "content", "blocked", "createdAt"],
       where: {
         id: req.params.id,
       },
       include: [
         { model: User, attributes: ["username"] },
-        { model: Question, attributes: ["id"] },
+        { model: Question, attributes: ["id", "type"] },
       ],
     });
 
