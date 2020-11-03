@@ -4,6 +4,7 @@ const {
   User,
   Question,
   QuestionViewLog,
+  MultipleChoiceItem,
   Answer,
   LikeableEntity,
   CommentableEntity,
@@ -21,7 +22,7 @@ const { getSortOptions } = require("./bin/get_sort_options");
 const sanitizeHtml = require("sanitize-html");
 
 // 정렬이 가능한 컬럼 정의
-const sortableColumns = ["id", "title", "content", "blocked", "created_at"];
+const sortableColumns = ["id", "title", "type", "content", "blocked", "created_at"];
 
 // 페이지네이션을 이용해 문제 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -30,6 +31,7 @@ router.get("/", async (req, res, next) => {
     let page = req.query.page || 1;
     let per_page = req.query.per_page || 10;
     let course_title = req.query.course_title; // 강의 제목
+    let question_type = req.query.question_type; // 문제 유형
     let q_question_content = req.query.q_question_content; // 문제 내용 검색어
     let sort = req.query.sort; // 정렬 옵션
 
@@ -53,7 +55,7 @@ router.get("/", async (req, res, next) => {
     }
 
     let queryOptions = {
-      attributes: ["id", "title", "blocked", "createdAt"], // 제목까지만 조회
+      attributes: ["id", "title", "type", "blocked", "createdAt"], // 제목까지만 조회
       where: {},
       include: [
         { model: User, attributes: ["username"] },
@@ -79,6 +81,19 @@ router.get("/", async (req, res, next) => {
         });
       }
       queryOptions.where.course_id = course.id;
+    }
+
+    // 문제 유형을 전달받았다면 문제 유형으로 검색
+    if (question_type) {
+      if (question_type !== "multiple_choice" && question_type !== "short_answer" && question_type !== "essay") {
+        return res.status(400).json({
+          success: false,
+          error: "questionTypeInvalid",
+          message: "문제 유형이 올바르지 않습니다",
+        });
+      }
+
+      queryOptions.where.type = question_type;
     }
 
     // 문제 내용 검색어를 전달 받았을 경우
@@ -121,7 +136,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const question = await Question.findOne({
-      attributes: ["id", "title", "content", "blocked", "createdAt"],
+      attributes: ["id", "title", "type", "content", "blocked", "createdAt"],
       where: {
         id: req.params.id,
       },
@@ -131,6 +146,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
         { model: LikeableEntity, attributes: ["id", "entity_type"] },
       ],
+      raw: true,
     });
 
     if (!question) {
@@ -139,6 +155,11 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
         error: "entryNotExists",
         message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
       });
+    }
+
+    // 객관식일 경우, 보기를 불러옴
+    if (question.type === "multiple_choice") {
+      question.multiple_choice_items = await MultipleChoiceItem.findAll({ where: { question_id: question.id } });
     }
 
     // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
@@ -194,7 +215,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  let { title, content } = req.body;
+  let { title, type, content, multiple_choice_items } = req.body; // 제목, 유형, 내용, 문제 보기
   const { course_title } = req.body;
   try {
     // 동일하거나 유사한 문제가 있는 경우
@@ -216,6 +237,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     // 문제 내용에서 스크립트 제거 (XSS 방지)
     title = sanitizeHtml(title);
+    type = sanitizeHtml(type);
     content = sanitizeHtml(content);
 
     // 생성할 문제 제목이 존재하는지 확인
@@ -224,6 +246,16 @@ router.post("/", isLoggedIn, async (req, res, next) => {
         success: false,
         error: "contentNotEnough",
         message: "생성할 문제 제목이 부족합니다",
+      });
+    }
+
+    // 생성할 문제 유형이 올바르지 않는 경우
+    if (!type || (type && type !== "multiple_choice" && type !== "short_answer" && type !== "essay")) {
+      console.log(type);
+      return res.status(400).json({
+        success: false,
+        error: "questionTypeInvalid",
+        message: "문제 유형이 올바르지 않습니다",
       });
     }
 
@@ -236,13 +268,39 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       });
     }
 
+    // 문제 유형이 객관식인 경우
+    if (type === "multiple_choice") {
+      // 보기가 없으면 오류
+      if (!multiple_choice_items || (multiple_choice_items && multiple_choice_items.length < 1)) {
+        return res.status(400).json({
+          success: false,
+          error: "multipleChoiceItemsNotGiven",
+          message: "객관식 문제의 보기가 부족합니다",
+        });
+      }
+    }
+
     // 문제 생성
-    const question = await Question.create({
+    let question = await Question.create({
       title,
+      type,
       content,
       course_id: course.id,
       user_id,
     });
+
+    // 문제 유형이 객관식인 경우
+    if (type === "multiple_choice") {
+      // 각 보기마다 보기 및 정답 레코드 생성
+      for (const multiple_choice_item of multiple_choice_items) {
+        // 보기 생성
+        let item = await MultipleChoiceItem.create({
+          question_id: question.id,
+          item_text: multiple_choice_item.item_text,
+          checked: multiple_choice_item.checked,
+        });
+      }
+    }
 
     // 생성한 문제에 댓글 및 좋아요 entity id 연결
     const commentable_entity = await CommentableEntity.create({
@@ -365,6 +423,9 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     await Like.destroy({ where: { likeable_entity_id: q_likeable_entity.id } });
     await Freshness.destroy({ where: { question_id: question.id } });
     await Difficulty.destroy({ where: { question_id: question.id } });
+
+    // 해당 문제의 보기 전부 삭제
+    await MultipleChoiceItem.destroy({ where: { question_id: question.id } });
 
     // 정답 일괄 삭제
     const answers = await Answer.findAll({ where: { id: req.params.id }, raw: true });
