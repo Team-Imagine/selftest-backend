@@ -18,7 +18,6 @@ module.exports = class Question extends Sequelize.Model {
         content: {
           type: Sequelize.TEXT,
           allowNull: false,
-          defaultValue: "active",
           comment: "내용",
         },
         blocked: {
