@@ -15,6 +15,7 @@ const {
   Bookmark,
   TestQuestion,
   Course,
+  ShortAnswerItem,
 } = require("../models");
 const Op = require("sequelize").Op;
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
@@ -162,6 +163,11 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       question.multiple_choice_items = await MultipleChoiceItem.findAll({ where: { question_id: question.id } });
     }
 
+    // 주관식일 경우, 정답 예시를 불러옴
+    if (question.type === "short_answer") {
+      question.short_answer_items = await ShortAnswerItem.findAll({ where: { question_id: question.id } });
+    }
+
     // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
     const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
     const view_log = await QuestionViewLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
@@ -215,7 +221,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  let { title, type, content, multiple_choice_items } = req.body; // 제목, 유형, 내용, 문제 보기
+  let { title, type, content, multiple_choice_items, short_answer_items } = req.body; // 제목, 유형, 내용, 객관식 문제 보기 또는 주관식 문제 정답 예시
   const { course_title } = req.body;
   try {
     // 동일하거나 유사한 문제가 있는 경우
@@ -280,6 +286,18 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       }
     }
 
+    // 문제 유형이 주관식인 경우
+    if (type === "short_answer") {
+      // 정답이 없으면 오류
+      if (!short_answer_items || (short_answer_items && short_answer_items.length < 1)) {
+        return res.status(400).json({
+          success: false,
+          error: "shortAnswerItemsNotGiven",
+          message: "주관식 문제의 정답 예시가 부족합니다",
+        });
+      }
+    }
+
     // 문제 생성
     let question = await Question.create({
       title,
@@ -298,6 +316,17 @@ router.post("/", isLoggedIn, async (req, res, next) => {
           question_id: question.id,
           item_text: multiple_choice_item.item_text,
           checked: multiple_choice_item.checked,
+        });
+      }
+    }
+
+    // 문제 유형이 주관식인 경우
+    if (type === "short_answer") {
+      // 정답 예시 생성
+      for (const short_answer_item of short_answer_items) {
+        let item = await ShortAnswerItem.create({
+          question_id: question.id,
+          item_text: sanitizeHtml(short_answer_item.item_text),
         });
       }
     }
@@ -424,8 +453,11 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     await Freshness.destroy({ where: { question_id: question.id } });
     await Difficulty.destroy({ where: { question_id: question.id } });
 
-    // 해당 문제의 보기 전부 삭제
+    // (객관식 문제) 해당 문제의 보기 전부 삭제
     await MultipleChoiceItem.destroy({ where: { question_id: question.id } });
+
+    // (주관식 문제) 해당 문제의 정답 예시 전부 삭제
+    await ShortAnswerItem.destroy({ where: { question_id: question.id } });
 
     // 정답 일괄 삭제
     const answers = await Answer.findAll({ where: { id: req.params.id }, raw: true });

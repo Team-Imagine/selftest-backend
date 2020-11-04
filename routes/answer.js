@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-const { User, Question, Answer, LikeableEntity, Like, MultipleChoiceItem } = require("../models");
+const { User, Question, Answer, LikeableEntity, Like, MultipleChoiceItem, ShortAnswerItem } = require("../models");
 const Op = require("sequelize").Op;
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { getSortOptions } = require("./bin/get_sort_options");
@@ -9,7 +9,7 @@ const sanitizeHtml = require("sanitize-html");
 // 정렬이 가능한 컬럼 정의
 const sortableColumns = ["id", "content", "blocked", "created_at"];
 
-// 문제 ID에 따른 정답 정보를 가져옴
+// 문제 ID에 따른 정답/풀이 정보를 가져옴
 router.get("/", isLoggedIn, async (req, res, next) => {
   try {
     // 쿼리 기본값
@@ -87,10 +87,14 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     const answers = await Answer.findAll(queryOptions);
 
     for (let j = 0; j < answers.length; j++) {
-      // 객관식일 경우, 보기에서 정답을 찾음
+      // 객관식일 경우, 보기 추가
       if (answers[j].question.type === "multiple_choice") {
         items = await MultipleChoiceItem.findAll({ where: { id: parseInt(items[i]), checked: true }, raw: true });
-        answers[j].content = items;
+        answers[j].multiple_choice_items = items;
+      } else if (answers[j].question.type === "short_answer") {
+        // 주관식일 경우, 정답 예시를 추가
+        items = await ShortAnswerItem.findAll({ where: { id: parseInt(items[i]) }, raw: true });
+        answers[j].short_answer_items = items;
       }
     }
 
