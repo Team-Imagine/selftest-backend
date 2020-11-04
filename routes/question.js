@@ -367,13 +367,13 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 // 문제 ID에 해당하는 문제 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
   const { id } = req.params;
-  let { title, content } = req.body;
+  let { title, content, multiple_choice_items, short_answer_items } = req.body;
   try {
     // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
     // 접속한 사용자의 ID와 query에 있는 문제의 user_id룰 를 대조
-    const question = await Question.findOne({ where: { id: id } });
+    const question = await Question.findOne({ where: { id: id }, raw: true });
     if (question.user_id !== user_id) {
       return res.status(401).json({
         success: false,
@@ -404,7 +404,26 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
       });
     }
 
+    if (question.type === "multiple_choice" && multiple_choice_items && multiple_choice_items.length > 0) {
+      // 객관식 문제일 경우, 보기 수정 지원
+      for (const multiple_choice_item of multiple_choice_items) {
+        await MultipleChoiceItem.update(
+          { item_text: sanitizeHtml(multiple_choice_item.item_text), checked: multiple_choice_item.checked },
+          { where: { id: multiple_choice_item.id, question_id: question.id } }
+        );
+      }
+    } else if (question.type === "short_answer" && short_answer_items && short_answer_items.length > 0) {
+      // 주관식 문제일 경우, 정답 예시 수정 지원
+      for (const short_answer_item of short_answer_items) {
+        await ShortAnswerItem.update(
+          { item_text: sanitizeHtml(short_answer_item.item_text) },
+          { where: { id: short_answer_item.id, question_id: question.id } }
+        );
+      }
+    }
+
     await Question.update({ title, content }, { where: { id } });
+
     return res.json({
       success: true,
       message: "문제 정보를 성공적으로 갱신했습니다",
