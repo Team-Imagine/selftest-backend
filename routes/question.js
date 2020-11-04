@@ -314,7 +314,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
         // 보기 생성
         let item = await MultipleChoiceItem.create({
           question_id: question.id,
-          item_text: multiple_choice_item.item_text,
+          item_text: sanitizeHtml(multiple_choice_item.item_text),
           checked: multiple_choice_item.checked,
         });
       }
