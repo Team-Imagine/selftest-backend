@@ -13,6 +13,7 @@ const likeRouter = require("./like");
 const dislikeRouter = require("./dislike");
 const difficultyRouter = require("./difficulty");
 const commentRouter = require("./comment");
+const bookmarkRouter = require("./bookmark");
 const testSetRouter = require("./testset");
 const imageRouter = require("./image");
 
@@ -27,6 +28,7 @@ router.use("/like", likeRouter);
 router.use("/dislike", dislikeRouter);
 router.use("/difficulty", difficultyRouter);
 router.use("/comment", commentRouter);
+router.use("/bookmark", bookmarkRouter);
 router.use("/testset", testSetRouter);
 router.use("/image", imageRouter);
 
