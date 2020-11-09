@@ -60,7 +60,7 @@ router.post("/:id", isLoggedIn, async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: "entryAlreadyExists",
-        message: "이미 난이도를 평가한 적이 있습니다",
+        message: "해당 ID를 가진 문제의 난이도를 이미 평가한 적이 있습니다",
       });
     }
 
@@ -111,7 +111,7 @@ router.put("/:id", async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: "entryNotExists",
-        message: "해당 ID를 가진 문제를 평가한 적이 없습니다",
+        message: "해당 ID를 가진 문제의 난이도를 평가한 적이 없습니다",
       });
     }
 
@@ -161,7 +161,7 @@ router.delete("/:id", async (req, res, next) => {
       return res.status(400).json({
         success: false,
         error: "entryNotExists",
-        message: "해당 ID를 가진 문제를 평가한 적이 없습니다",
+        message: "해당 ID를 가진 문제의 난이도를 평가한 적이 없습니다",
       });
     }
 
