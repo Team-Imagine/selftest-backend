@@ -22,11 +22,12 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     let is_liked = (await Like.findOne({ where: { user_id, likeable_entity_id } })) ? true : false;
     let is_disliked = (await Dislike.findOne({ where: { user_id, likeable_entity_id } })) ? true : false;
 
+    console.log(likeable_entity);
     return res.json({
       success: true,
       is_liked,
       is_disliked,
-      message: "해당 문제의 좋아요 및 싫어요 상태 확인에 성공했습니다",
+      message: "해당 객체의 좋아요 및 싫어요 상태 확인에 성공했습니다",
     });
   } catch (error) {
     console.error(error);
@@ -69,7 +70,7 @@ router.post("/:id", isLoggedIn, async (req, res, next) => {
 
     return res.json({
       success: true,
-      message: "해당 문제를 성공적으로 좋아요 처리하였습니다",
+      message: "해당 객체를 성공적으로 좋아요 처리하였습니다",
     });
   } catch (error) {
     console.error(error);
@@ -104,7 +105,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
 
     return res.json({
       success: true,
-      message: "해당 문제의 좋아요를 삭제하는데 성공했습니다",
+      message: "해당 객체의 좋아요를 삭제하는데 성공했습니다",
     });
   } catch (error) {
     console.error(error);
