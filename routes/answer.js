@@ -1,8 +1,19 @@
 var express = require("express");
 var router = express.Router();
-const { User, Question, Answer, LikeableEntity, Like, MultipleChoiceItem, ShortAnswerItem } = require("../models");
+const {
+  User,
+  Question,
+  Answer,
+  LikeableEntity,
+  Like,
+  MultipleChoiceItem,
+  ShortAnswerItem,
+  Dislike,
+} = require("../models");
 const Op = require("sequelize").Op;
+const sequelize = require("sequelize");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { get_likes, get_dislikes } = require("./bin/get_evaluations");
 const { getSortOptions } = require("./bin/get_sort_options");
 const sanitizeHtml = require("sanitize-html");
 
@@ -44,10 +55,15 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       include: [
         { model: User, attributes: ["username"] },
         { model: Question, attributes: ["id", "type"] },
+        {
+          model: LikeableEntity,
+          attributes: ["id", "entity_type"],
+        },
       ],
       order: [[sortOptions.column, sortOptions.order]],
       offset: +page - 1,
       limit: +per_page,
+      raw: true,
     };
 
     // 문제 ID를 전달받았다면 문제 ID로 찾기
@@ -86,12 +102,19 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     // 문제 목록 조회
     const answers = await Answer.findAll(queryOptions);
 
+    // Get likes and dislikes
+    for (let i = 0; i < answers.length; i++) {
+      const likeable_entity_id = answers[i]["likeable_entity.id"];
+      answers[i]["likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes || 0;
+      answers[i]["likeable_entity.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes || 0;
+    }
+
     for (let j = 0; j < answers.length; j++) {
       // 객관식일 경우, 보기 추가
-      if (answers[j].question.type === "multiple_choice") {
+      if (answers[j]["question.type"] === "multiple_choice") {
         items = await MultipleChoiceItem.findAll({ where: { id: parseInt(items[i]), checked: true }, raw: true });
         answers[j].multiple_choice_items = items;
-      } else if (answers[j].question.type === "short_answer") {
+      } else if (answers[j]["question.type"] === "short_answer") {
         // 주관식일 경우, 정답 예시를 추가
         items = await ShortAnswerItem.findAll({ where: { id: parseInt(items[i]) }, raw: true });
         answers[j].short_answer_items = items;
@@ -124,6 +147,20 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       include: [
         { model: User, attributes: ["username"] },
         { model: Question, attributes: ["id", "type"] },
+        {
+          model: LikeableEntity,
+          attributes: ["id", "entity_type"],
+          include: [
+            {
+              model: Like,
+              attributes: [[sequelize.fn("COUNT", sequelize.col("good")), "total_likes"]],
+            },
+            {
+              model: Dislike,
+              attributes: [[sequelize.fn("COUNT", sequelize.col("bad")), "total_dislikes"]],
+            },
+          ],
+        },
       ],
     });
 
@@ -285,6 +322,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     const q_likeable_entity = await LikeableEntity.findOne({ where: { id: answer.likeable_entity_id } });
     await LikeableEntity.destroy({ where: { id: q_likeable_entity.id } });
     await Like.destroy({ where: { likeable_entity_id: q_likeable_entity.id } });
+    await Dislike.destroy({ where: { likeable_entity_id: q_likeable_entity.id } });
 
     return res.json({
       success: true,

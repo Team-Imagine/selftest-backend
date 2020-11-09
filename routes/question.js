@@ -10,6 +10,7 @@ const {
   CommentableEntity,
   Comment,
   Like,
+  Dislike,
   Difficulty,
   Freshness,
   Bookmark,
@@ -19,8 +20,10 @@ const {
   QuestionSolvedLog,
 } = require("../models");
 const Op = require("sequelize").Op;
+const sequelize = require("sequelize");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { getSortOptions } = require("./bin/get_sort_options");
+const { get_likes, get_dislikes, get_average_difficulty, get_average_freshness } = require("./bin/get_evaluations");
 const sanitizeHtml = require("sanitize-html");
 const UnlockedQuestion = require("../models/test/unlocked_question");
 
@@ -67,10 +70,16 @@ router.get("/", async (req, res, next) => {
       include: [
         { model: User, attributes: ["username"] },
         { model: Course, attributes: ["title"] },
+        { model: CommentableEntity, attributes: ["id", "entity_type"] },
+        {
+          model: LikeableEntity,
+          attributes: ["id", "entity_type"],
+        },
       ],
       order: [[sortOptions.column, sortOptions.order]],
       offset: +page - 1,
       limit: +per_page,
+      raw: true,
     };
 
     // 강의 이름을 전달받았다면 강의 이름으로 검색
@@ -123,6 +132,15 @@ router.get("/", async (req, res, next) => {
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const questions = await Question.findAll(queryOptions);
 
+    // Get likes, dislikes, and average difficulty and freshness
+    for (let i = 0; i < questions.length; i++) {
+      const likeable_entity_id = questions[i]["likeable_entity.id"];
+      questions[i]["likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes || 0;
+      questions[i]["likeable_entity.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes || 0;
+      questions[i]["average_difficulty"] = (await get_average_difficulty(questions[i].id).average_difficulty) || 0;
+      questions[i]["average_freshness"] = (await get_average_freshness(questions[i].id).average_freshness) || 0;
+    }
+
     return res.json({
       success: true,
       message: "등록된 문제 목록 조회에 성공했습니다",
@@ -151,7 +169,28 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
         { model: User, attributes: ["username"] },
         { model: Course, attributes: ["title"] },
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
-        { model: LikeableEntity, attributes: ["id", "entity_type"] },
+        {
+          model: LikeableEntity,
+          attributes: ["id", "entity_type"],
+          include: [
+            {
+              model: Like,
+              attributes: [[sequelize.fn("COUNT", sequelize.col("good")), "total_likes"]],
+            },
+            {
+              model: Dislike,
+              attributes: [[sequelize.fn("COUNT", sequelize.col("bad")), "total_dislikes"]],
+            },
+          ],
+        },
+        {
+          model: Difficulty,
+          attributes: ["id", [sequelize.fn("AVG", sequelize.col("score")), "average_difficulty"]],
+        },
+        {
+          model: Freshness,
+          attributes: ["id", [sequelize.fn("AVG", sequelize.col("fresh")), "average_freshness"]],
+        },
       ],
       raw: true,
     });
@@ -253,7 +292,6 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     // 생성할 문제 유형이 올바르지 않는 경우
     if (!type || (type && type !== "multiple_choice" && type !== "short_answer" && type !== "essay")) {
-      console.log(type);
       return res.status(400).json({
         success: false,
         error: "questionTypeInvalid",
@@ -465,6 +503,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
     const q_likeable_entity = await LikeableEntity.findOne({ where: { id: question.likeable_entity_id } });
     await LikeableEntity.destroy({ where: { id: q_likeable_entity.id } });
     await Like.destroy({ where: { likeable_entity_id: q_likeable_entity.id } });
+    await Dislike.destroy({ where: { likeable_entity_id: q_likeable_entity.id } });
     await Freshness.destroy({ where: { question_id: question.id } });
     await Difficulty.destroy({ where: { question_id: question.id } });
 
@@ -488,6 +527,7 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
       const a_likeable_entity = await LikeableEntity.findOne({ where: { id: answer.likeable_entity_id } });
       await LikeableEntity.destroy({ where: { id: a_commentable_entity.id } });
       await Like.destroy({ where: { likeable_entity_id: a_likeable_entity.id } });
+      await Dislike.destroy({ where: { likeable_entity_id: a_likeable_entity.id } });
     }
 
     // 모든 사용자로부터 해당 문제 즐겨찾기 삭제

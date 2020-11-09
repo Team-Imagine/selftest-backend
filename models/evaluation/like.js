@@ -6,7 +6,8 @@ module.exports = class Like extends Sequelize.Model {
       {
         good: {
           type: Sequelize.INTEGER,
-          default_value: 0,
+          default_value: 1,
+          allowNull: false,
           comment: "좋아요",
         },
       },
