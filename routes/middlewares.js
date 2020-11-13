@@ -2,6 +2,9 @@ const jwt = require("jsonwebtoken");
 const { PointLog, User, Freshness, Like, Difficulty, PenaltyLog } = require("../models");
 require("dotenv").config();
 
+const express = require("express");
+const router = express.Router();
+
 // 사용자가 정지 상태인지, 이메일 인증은 받았는지 여부는 검사하지 않고 로그인 되어 있는지 검사
 const isJustLoggedIn = async function (req, res, next) {
   try {
@@ -518,6 +521,10 @@ const readTotalPointLog = async (req, res) => {
   }
 };
 
+const similarityCheck = async (req, res) => {
+  
+};
+
 module.exports = {
   isJustLoggedIn,
   isLoggedIn,
@@ -538,4 +545,5 @@ module.exports = {
   averageDifficulty,
   givePenalty,
   questionBlocked,
+  similarityCheck,
 };
