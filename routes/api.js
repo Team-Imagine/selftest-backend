@@ -4,6 +4,7 @@ var router = express.Router();
 // routers
 const authRouter = require("./auth");
 const userRouter = require("./user");
+const attendanceRouter = require("./attendance");
 const subjectRouter = require("./subject");
 const courseRouter = require("./course");
 const questionRouter = require("./question");
@@ -19,6 +20,7 @@ const imageRouter = require("./image");
 
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
+router.use("/attendance", attendanceRouter);
 router.use("/subject", subjectRouter);
 router.use("/course", courseRouter);
 router.use("/question", questionRouter);
