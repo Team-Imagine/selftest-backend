@@ -182,28 +182,16 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
         {
           model: LikeableEntity,
           attributes: ["id", "entity_type"],
-          include: [
-            {
-              model: Like,
-              attributes: [[sequelize.fn("COUNT", sequelize.col("good")), "total_likes"]],
-            },
-            {
-              model: Dislike,
-              attributes: [[sequelize.fn("COUNT", sequelize.col("bad")), "total_dislikes"]],
-            },
-          ],
-        },
-        {
-          model: Difficulty,
-          attributes: ["id", [sequelize.fn("AVG", sequelize.col("score")), "average_difficulty"]],
-        },
-        {
-          model: Freshness,
-          attributes: ["id", [sequelize.fn("AVG", sequelize.col("fresh")), "average_freshness"]],
         },
       ],
       raw: true,
     });
+
+    const likeable_entity_id = question["likeable_entity.id"];
+    question["likeable_entity.likes.total_likes"] = (await get_likes(likeable_entity_id)).total_likes;
+    question["likeable_entity.dislikes.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes;
+    question["difficulties.average_difficulty"] = (await get_average_difficulty(question.id)).average_difficulty;
+    question["freshnesses.average_freshness"] = (await get_average_freshness(question.id)).average_freshness;
 
     if (!question) {
       return res.status(400).json({
