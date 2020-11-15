@@ -31,6 +31,7 @@ module.exports.get_average_difficulty = async function (question_id) {
     },
     raw: true,
   });
+  console.log(average_difficulty);
 
   return average_difficulty[0];
 };
@@ -44,6 +45,5 @@ module.exports.get_average_freshness = async function (question_id) {
     raw: true,
   });
 
-  console.log(average_freshness);
   return average_freshness[0];
 };
