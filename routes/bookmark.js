@@ -85,7 +85,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
   }
 });
 
-// 문제 ID에 해당하는 문제를 시험 문제로서 시험에 추가
+// 문제 ID에 해당하는 문제를 즐겨찾기에 추가
 router.post("/:id", isLoggedIn, async (req, res, next) => {
   try {
     const user_id = await getLoggedInUserId(req, res); // 사용자 ID
