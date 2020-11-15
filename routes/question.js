@@ -143,12 +143,12 @@ router.get("/", async (req, res, next) => {
     const questions = await Question.findAndCountAll(queryOptions);
 
     // Get likes, dislikes, and average difficulty and freshness
-    for (let i = 0; i < questions.length; i++) {
-      const likeable_entity_id = questions[i]["likeable_entity.id"];
-      questions[i]["likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes || 0;
-      questions[i]["likeable_entity.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes || 0;
-      questions[i]["average_difficulty"] = (await get_average_difficulty(questions[i].id).average_difficulty) || 0;
-      questions[i]["average_freshness"] = (await get_average_freshness(questions[i].id).average_freshness) || 0;
+    for (let i = 0; i < questions.rows.length; i++) {
+      const likeable_entity_id = questions.rows[i]["likeable_entity.id"];
+      questions.rows[i]["likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes;
+      questions.rows[i]["likeable_entity.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes;
+      questions.rows[i]["average_difficulty"] = (await get_average_difficulty(questions.rows[i].id)).average_difficulty;
+      questions.rows[i]["average_freshness"] = (await get_average_freshness(questions.rows[i].id)).average_freshness;
     }
 
     return res.json({

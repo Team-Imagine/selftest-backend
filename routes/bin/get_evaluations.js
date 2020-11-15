@@ -9,7 +9,7 @@ module.exports.get_likes = async function (likeable_entity_id) {
     },
     raw: true,
   });
-  return likes;
+  return likes[0];
 };
 
 module.exports.get_dislikes = async function (likeable_entity_id) {
@@ -20,7 +20,7 @@ module.exports.get_dislikes = async function (likeable_entity_id) {
     },
     raw: true,
   });
-  return dislikes;
+  return dislikes[0];
 };
 
 module.exports.get_average_difficulty = async function (question_id) {
@@ -32,7 +32,7 @@ module.exports.get_average_difficulty = async function (question_id) {
     raw: true,
   });
 
-  return average_difficulty;
+  return average_difficulty[0];
 };
 
 module.exports.get_average_freshness = async function (question_id) {
@@ -44,5 +44,5 @@ module.exports.get_average_freshness = async function (question_id) {
     raw: true,
   });
 
-  return average_freshness;
+  return average_freshness[0];
 };

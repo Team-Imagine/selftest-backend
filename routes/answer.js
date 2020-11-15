@@ -102,21 +102,27 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     const answers = await Answer.findAndCountAll(queryOptions);
 
     // Get likes and dislikes
-    for (let i = 0; i < answers.length; i++) {
-      const likeable_entity_id = answers[i]["likeable_entity.id"];
-      answers[i]["likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes || 0;
-      answers[i]["likeable_entity.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes || 0;
+    for (let i = 0; i < answers.rows.length; i++) {
+      const likeable_entity_id = answers.rows[i]["likeable_entity.id"];
+      answers.rows[i]["likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes;
+      answers.rows[i]["likeable_entity.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes;
     }
 
-    for (let j = 0; j < answers.length; j++) {
+    for (let j = 0; j < answers.rows.length; j++) {
       // 객관식일 경우, 보기 추가
-      if (answers[j]["question.type"] === "multiple_choice") {
-        items = await MultipleChoiceItem.findAll({ where: { id: parseInt(items[i]), checked: true }, raw: true });
-        answers[j].multiple_choice_items = items;
-      } else if (answers[j]["question.type"] === "short_answer") {
+      if (answers.rows[j]["question.type"] === "multiple_choice") {
+        items = await MultipleChoiceItem.findAll({
+          where: { question_id: answers.rows[j].id, checked: true },
+          raw: true,
+        });
+        answers.rows[j].multiple_choice_answers = items;
+      } else if (answers.rows[j]["question.type"] === "short_answer") {
         // 주관식일 경우, 정답 예시를 추가
-        items = await ShortAnswerItem.findAll({ where: { id: parseInt(items[i]) }, raw: true });
-        answers[j].short_answer_items = items;
+        items = await ShortAnswerItem.findAll({
+          where: { question_id: answers.rows[j].id },
+          raw: true,
+        });
+        answers.rows[j].short_answer_answers = items;
       }
     }
 
