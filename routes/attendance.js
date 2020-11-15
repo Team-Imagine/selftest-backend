@@ -16,7 +16,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     const user_id = await getLoggedInUserId(req, res);
 
     let queryOptions = {
-      attributes: ["createdAt"], // 제목까지만 조회
+      attributes: ["createdAt"],
       where: { user_id },
       order: [["createdAt", "desc"]],
       offset: (+page - 1) * per_page,
@@ -48,7 +48,7 @@ router.get("/today", isLoggedIn, async (req, res, next) => {
 
     // 하루 이내 출석 정보를 가져옴
     const existingAttendances = await Attendance.findAll({
-      attributes: ["createdAt"], // 제목까지만 조회
+      attributes: ["createdAt"],
       order: [["createdAt", "desc"]],
       where: {
         user_id,
