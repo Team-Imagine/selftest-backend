@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { User, Question, Course, Bookmark } = require("../models");
+const { User, Question, Course, Bookmark, Subject } = require("../models");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 
 // 해당 문제가 즐겨찾기된 적 있는지 확인한다
@@ -62,6 +62,13 @@ router.get("/", isLoggedIn, async (req, res, next) => {
         {
           model: Question,
           attributes: ["id", "title", "type", "blocked", "createdAt"], // 제목까지만 조회
+          include: [
+            {
+              model: Course,
+              attributes: ["title"],
+              include: [{ model: Subject, attributes: ["title"] }],
+            },
+          ],
         },
       ],
       offset: +page - 1,
