@@ -28,6 +28,7 @@ const {
   Course,
   ShortAnswerItem,
   QuestionSolvedLog,
+  Subject,
 } = require("../models");
 const Op = require("sequelize").Op;
 const sequelize = require("sequelize");
@@ -79,12 +80,9 @@ router.get("/", async (req, res, next) => {
       where: {},
       include: [
         { model: User, attributes: ["username"] },
-        { model: Course, attributes: ["title"] },
+        { model: Course, attributes: ["title"], include: [{ model: Subject, attributes: ["title"] }] },
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
-        {
-          model: LikeableEntity,
-          attributes: ["id", "entity_type"],
-        },
+        { model: LikeableEntity, attributes: ["id", "entity_type"] },
       ],
       order: [[sortOptions.column, sortOptions.order]],
       offset: (+page - 1) * per_page,
@@ -177,12 +175,9 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       },
       include: [
         { model: User, attributes: ["username"] },
-        { model: Course, attributes: ["title"] },
+        { model: Course, attributes: ["title"], include: [{ model: Subject, attributes: ["title"] }] },
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
-        {
-          model: LikeableEntity,
-          attributes: ["id", "entity_type"],
-        },
+        { model: LikeableEntity, attributes: ["id", "entity_type"] },
       ],
       raw: true,
     });
