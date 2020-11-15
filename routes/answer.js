@@ -76,7 +76,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
         return res.status(400).json({
           success: false,
           error: "entryNotExists",
-          message: "해당 문제 ID로 등록된 정답이 존재하지 않습니다",
+          message: "해당 요청에 맞는 등록된 정답이 존재하지 않습니다",
         });
       }
       queryOptions.where.question_id = question.id;
