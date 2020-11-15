@@ -1,3 +1,13 @@
+const { PythonShell } = require("python-shell");
+var textsimilarity = require('textsimilarity');
+const similarity = require('similarity');
+
+const path = require("path");
+
+var mod = require('korean-text-analytics');
+var task = new mod.TaskQueue();
+
+
 const express = require("express");
 const router = express.Router();
 const {
@@ -748,6 +758,111 @@ router.get("/own/:id", isLoggedIn, async (req, res, next) => {
       message: "문제를 풀이 처리 하는데 실패했습니다",
     });
   }
+});
+
+/*
+const titleGet = (title) => {
+  let titleList = [];
+
+  mod.ExecuteMorphModule(title, async(err, rep) => {   
+    for(var i in rep.morphed) {
+      if(rep.morphed[i].tag === 'NNG' || rep.morphed[i].tag === 'VV' || rep.morphed[i].tag === 'NNP') {
+        titleList.push(rep.morphed[i].word);
+      }
+    }
+
+    console.log(titleList);
+    return titleList;
+  })
+}
+*/
+
+const pushList = async (questions) => {   
+  let doclist = [];
+  for(var i in questions) {
+    doclist.push(questions[i].dataValues.title);
+  }
+  return doclist;
+}
+
+const compareTitle = async(selected, doclist) => {
+  await mod.ExecuteMorphModule(selected.title, async(err, rep) => {   
+    let arr = '';
+    for(var i in rep.morphed) {
+      if(rep.morphed[i].tag === 'NNG' || rep.morphed[i].tag === 'NNP') {
+        arr += rep.morphed[i].word + ' ';
+      }
+    }
+    selected.title = arr;
+    console.log(selected.title);
+
+    for(var j in doclist) {
+      await mod.ExecuteMorphModule(doclist[j], async(err, rep) => {
+        
+        let arr = '';
+        for(var k in rep.morphed) {
+          if(rep.morphed[k].tag === 'NNG' || rep.morphed[k].tag === 'NNP') {
+            arr += rep.morphed[k].word + ' ';
+          }
+        }
+
+        console.log(selected.title, ',', arr, '와의 유사도:', similarity(selected.title, arr));
+
+        if(similarity(selected.title, arr) > 0.5 && similarity(selected.title, arr) !== 1) {
+          console.log(selected.title, ',', arr, similarity(selected.title, arr));
+          //console.log(questions[i].dataValues.title, questions[i].dataValues.id,',' , selected.id ," 유사합니다." );
+        }
+      })
+    }
+  })
+
+}
+
+router.post("/test", async (req, res, next) => {
+  const { selected_id } = req.body;
+
+  const question = await Question.findOne({
+    attributes: ["id", "title", "type", "content", "blocked", "createdAt"],
+    where: {
+      id: selected_id,
+    },
+  });
+  
+  let queryOptions = {
+    attributes: ["id", "title", "type", "content", "createdAt"], // 제목까지만 조회
+    where: {},
+  };
+
+  const questions = await Question.findAll(queryOptions);
+
+  let doclist = await pushList(questions);
+
+  console.log(doclist);
+ 
+  compareTitle(question.dataValues, doclist);
+
+  //console.log(doclist);
+
+  //console.log(textsimilarity(doclist[8], doclist[9]));
+
+  /*
+  var options = {
+    mode: 'text',
+    encoding: 'utf8',
+    pythonOptions: ['-u'],
+    scriptPath: 'routes',
+    args: [JSON.stringify({ questions })],
+    pythonPath: ''
+  };
+
+  PythonShell.run("example.py", options, function(err, data) {
+    res.status(200).json({ data: JSON.parse(data), success: true });
+
+    data = JSON.parse(data);
+
+    //console.log(data.id);
+  });
+  */    
 });
 
 module.exports = router;
