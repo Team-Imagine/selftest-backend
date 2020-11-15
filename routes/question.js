@@ -87,7 +87,7 @@ router.get("/", async (req, res, next) => {
         },
       ],
       order: [[sortOptions.column, sortOptions.order]],
-      offset: +page - 1,
+      offset: (+page - 1) * per_page,
       limit: +per_page,
       raw: true,
     };

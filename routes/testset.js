@@ -23,7 +23,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       attributes: ["id", "title", "created_at", "updated_at"],
       where: { user_id },
       include: [{ model: User, attributes: ["username"] }],
-      offset: +page - 1,
+      offset: (+page - 1) * per_page,
       limit: +per_page,
     };
 
@@ -82,7 +82,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
           ],
         },
       ],
-      offset: +page - 1,
+      offset: (+page - 1) * per_page,
       limit: +per_page,
     });
 

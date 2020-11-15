@@ -20,7 +20,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
       ],
       order: [["createdAt", "ASC"]], // 생성된 순서로 정렬
-      offset: +page - 1,
+      offset: (+page - 1) * per_page,
       limit: +per_page,
     };
 
