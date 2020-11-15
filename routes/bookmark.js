@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { User, Question, Course, Bookmark, Subject } = require("../models");
+const { User, Question, Course, Bookmark, Subject, CommentableEntity, LikeableEntity } = require("../models");
+const { get_likes, get_dislikes, get_average_difficulty, get_average_freshness } = require("./bin/get_evaluations");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 
 // 해당 문제가 즐겨찾기된 적 있는지 확인한다
@@ -63,19 +64,35 @@ router.get("/", isLoggedIn, async (req, res, next) => {
           model: Question,
           attributes: ["id", "title", "type", "blocked", "createdAt"], // 제목까지만 조회
           include: [
-            {
-              model: Course,
-              attributes: ["title"],
-              include: [{ model: Subject, attributes: ["title"] }],
-            },
+            { model: User, attributes: ["username"] },
+            { model: Course, attributes: ["title"], include: [{ model: Subject, attributes: ["title"] }] },
+            { model: CommentableEntity, attributes: ["id", "entity_type"] },
+            { model: LikeableEntity, attributes: ["id", "entity_type"] },
           ],
         },
       ],
+      order: [["createdAt", "DESC"]],
       offset: (+page - 1) * per_page,
       limit: +per_page,
+      raw: true,
     };
 
     const bookmarks = await Bookmark.findAndCountAll(queryOptions);
+    console.log(bookmarks);
+    // Get likes, dislikes, and average difficulty and freshness
+    for (let i = 0; i < bookmarks.rows.length; i++) {
+      const likeable_entity_id = bookmarks.rows[i]["question.likeable_entity.id"];
+      bookmarks.rows[i]["question.likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes;
+      bookmarks.rows[i]["question.likeable_entity.total_dislikes"] = (
+        await get_dislikes(likeable_entity_id)
+      ).total_dislikes;
+      bookmarks.rows[i]["question.average_difficulty"] = (
+        await get_average_difficulty(bookmarks.rows[i]["question.id"])
+      ).average_difficulty;
+      bookmarks.rows[i]["question.average_freshness"] = (
+        await get_average_freshness(bookmarks.rows[i]["question.id"])
+      ).average_freshness;
+    }
 
     return res.json({
       success: true,
