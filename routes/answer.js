@@ -15,7 +15,6 @@ const sequelize = require("sequelize");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { get_likes, get_dislikes } = require("./bin/get_evaluations");
 const { getSortOptions } = require("./bin/get_sort_options");
-const sanitizeHtml = require("sanitize-html");
 
 // 정렬이 가능한 컬럼 정의
 const sortableColumns = ["id", "content", "blocked", "created_at"];
@@ -208,9 +207,6 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    // 정답 내용에서 스크립트 제거 (XSS 방지)
-    content = sanitizeHtml(content);
-
     // TODO: 생성할 정답 내용이 충분한지 확인
     if (!content) {
       return res.status(400).json({
@@ -266,9 +262,6 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
         message: "자신이 업로드한 정답만 내용을 수정할 수 있습니다",
       });
     }
-
-    // 정답 내용에서 스크립트 제거 (XSS 방지)
-    content = sanitizeHtml(content);
 
     // TODO: 수정할 정답 내용이 존재하는지 확인
     if (!content) {

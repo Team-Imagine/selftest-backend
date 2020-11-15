@@ -286,10 +286,9 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    // 문제 내용에서 스크립트 제거 (XSS 방지)
+    // 문제 제목에서 스크립트 제거 (XSS 방지)
     title = sanitizeHtml(title);
     type = sanitizeHtml(type);
-    content = sanitizeHtml(content);
 
     // 생성할 문제 제목이 존재하는지 확인
     if (!title) {
@@ -426,9 +425,8 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    // 문제 내용 및 제목에서 스크립트 제거 (XSS 방지)
+    // 문제 제목에서 스크립트 제거 (XSS 방지)
     title = sanitizeHtml(title);
-    content = sanitizeHtml(content);
 
     // 수정할 문제 제목이 존재하는지 확인
     if (!title) {
