@@ -55,7 +55,7 @@ router.get("/", async (req, res, next) => {
       queryOptions.where.subject_id = subject.id;
     }
 
-    const courses = await Course.findAll(queryOptions);
+    const courses = await Course.findAndCountAll(queryOptions);
 
     return res.status(200).json({
       success: true,

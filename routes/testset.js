@@ -27,7 +27,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       limit: +per_page,
     };
 
-    const test_sets = await TestSet.findAll(queryOptions);
+    const test_sets = await TestSet.findAndCountAll(queryOptions);
 
     return res.json({
       success: true,
@@ -61,7 +61,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    const test_set = await TestSet.findOne({
+    const test_set = await TestSet.findAndCountAll({
       attributes: ["id", "title", "created_at", "updated_at"],
       where: { id, user_id },
       include: [

@@ -75,7 +75,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
       limit: +per_page,
     };
 
-    const bookmarks = await Bookmark.findAll(queryOptions);
+    const bookmarks = await Bookmark.findAndCountAll(queryOptions);
 
     return res.json({
       success: true,

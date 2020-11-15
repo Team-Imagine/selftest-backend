@@ -99,7 +99,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     }
 
     // 문제 목록 조회
-    const answers = await Answer.findAll(queryOptions);
+    const answers = await Answer.findAndCountAll(queryOptions);
 
     // Get likes and dislikes
     for (let i = 0; i < answers.length; i++) {

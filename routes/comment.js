@@ -35,7 +35,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     }
 
     // 댓글 조회
-    const comments = await Comment.findAll(queryOptions);
+    const comments = await Comment.findAndCountAll(queryOptions);
 
     return res.json({
       success: true,

@@ -36,7 +36,7 @@ router.get("/", async (req, res, next) => {
       };
     }
 
-    const subjects = await Subject.findAll(queryOptions);
+    const subjects = await Subject.findAndCountAll(queryOptions);
 
     return res.status(200).json({
       success: true,

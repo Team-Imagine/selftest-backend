@@ -140,7 +140,7 @@ router.get("/", async (req, res, next) => {
 
     // 비활성화되지 않은 문제만 불러옴
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
-    const questions = await Question.findAll(queryOptions);
+    const questions = await Question.findAndCountAll(queryOptions);
 
     // Get likes, dislikes, and average difficulty and freshness
     for (let i = 0; i < questions.length; i++) {
