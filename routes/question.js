@@ -388,16 +388,13 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     // 본인이 올린 문제는 조회/풀이/정답 열람에 포인트가 차감이 되면 안되므로,
     // 1. 조회에 포인트가 차감이 되면 안되므로 조회 기록
-    await QuestionViewLog.create({
-      question_id: question.id,
-      user_id,
-    });
+    await QuestionViewLog.create({ question_id: question.id, user_id });
 
     // 2. 문제 풀이 기록에 추가하여 문제를 풀이 처리
-    await QuestionSolvedLog.create({ user_id, question_id });
+    await QuestionSolvedLog.create({ user_id, question_id: question.id });
 
     // 3. 문제를 열람한 문제 목록에 추가하여 문제를 열람 처리
-    await UnlockedQuestion.create({ user_id, question_id });
+    await UnlockedQuestion.create({ user_id, question_id: question.id });
 
     return res.json({
       success: true,
