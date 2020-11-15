@@ -81,6 +81,8 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
     // 하루 이내 출석한 적 있는지 정보를 가져옴
     const existingAttendances = await Attendance.findAll({
+      attributes: ["createdAt"],
+      order: [["createdAt", "desc"]],
       where: {
         user_id,
         createdAt: {
