@@ -53,6 +53,7 @@ router.get("/", async (req, res, next) => {
     let per_page = req.query.per_page || 10;
     let course_title = req.query.course_title; // 강의 제목
     let question_type = req.query.question_type; // 문제 유형
+    let q_question_title = req.query.q_question_title; // 문제 제목 검색어
     let q_question_content = req.query.q_question_content; // 문제 내용 검색어
     let sort = req.query.sort; // 정렬 옵션
 
@@ -118,6 +119,22 @@ router.get("/", async (req, res, next) => {
       }
 
       queryOptions.where.type = question_type;
+    }
+
+    // 문제 제목 검색어를 전달 받았을 경우
+    if (q_question_title) {
+      // 문제 검색 키워드 길이 제한
+      if (q_question_title.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "contentNotEnough",
+          message: "검색어는 2자 이상이어야 합니다",
+        });
+      }
+      // TODO: HTML 태그 제거 후 검색
+      queryOptions.where.title = {
+        [Op.like]: "%" + q_question_title + "%",
+      };
     }
 
     // 문제 내용 검색어를 전달 받았을 경우
