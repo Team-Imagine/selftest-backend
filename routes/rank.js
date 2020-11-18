@@ -14,7 +14,6 @@ router.get("/", async (req, res, next) => {
 
     let queryOptions = {
       attributes: [
-        "id",
         "username",
         [Sequelize.fn("COUNT", Sequelize.col("questions.id")), "num_uploaded_questions"],
         [Sequelize.fn("COUNT", Sequelize.col("question_solved_logs.id")), "num_solved_questions"],
