@@ -78,7 +78,7 @@ router.get("/", async (req, res, next) => {
 
     let queryOptions = {
       attributes: ["id", "title", "type", "blocked", "createdAt"], // 제목까지만 조회
-      where: {},
+      where: { blocked: false }, // 블라인드 처리되지 않은 문제만 카운트
       include: [
         { model: User, attributes: ["username"] },
         { model: Course, attributes: ["title"], include: [{ model: Subject, attributes: ["title"] }] },
