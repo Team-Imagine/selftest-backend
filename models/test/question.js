@@ -92,5 +92,21 @@ module.exports = class Question extends Sequelize.Model {
       sourceKey: "id",
       onDelete: "CASCADE",
     });
+    db.Question.hasMany(db.MultipleChoiceItem, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.ShortAnswerItem, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
   }
 };
