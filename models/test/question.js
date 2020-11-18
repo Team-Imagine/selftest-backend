@@ -108,5 +108,29 @@ module.exports = class Question extends Sequelize.Model {
       sourceKey: "id",
       onDelete: "CASCADE",
     });
+    db.Question.hasMany(db.QuestionViewLog, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.QuestionSolvedLog, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.UnlockedQuestion, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
   }
 };

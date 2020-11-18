@@ -162,5 +162,29 @@ module.exports = class User extends Sequelize.Model {
       sourceKey: "id",
       onDelete: "CASCADE",
     });
+    db.User.hasMany(db.QuestionViewLog, {
+      foreignKey: {
+        name: "user_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.User.hasMany(db.QuestionSolvedLog, {
+      foreignKey: {
+        name: "user_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.User.hasMany(db.UnlockedQuestion, {
+      foreignKey: {
+        name: "user_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
   }
 };
