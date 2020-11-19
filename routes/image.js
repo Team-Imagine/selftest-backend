@@ -1,5 +1,6 @@
 const express = require("express");
 const multer = require("multer");
+const path = require("path");
 const fs = require("fs");
 const { isLoggedIn } = require("./middlewares");
 const router = express.Router();
@@ -26,7 +27,7 @@ const upload = multer({
 
 // 이미지 업로드 및 경로 반환
 router.post("/upload", isLoggedIn, upload.single("img"), (req, res, next) => {
-  console.log(req.file);
+
   return res.json({
     success: true,
     message: "이미지 업로드에 성공했습니다",
