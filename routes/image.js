@@ -26,12 +26,12 @@ const upload = multer({
 });
 
 // 이미지 업로드 및 경로 반환
-router.post("/upload", isLoggedIn, upload.single("img"), (req, res, next) => {
+router.post("/upload", isLoggedIn, upload.array("img"), (req, res, next) => {
 
   return res.json({
     success: true,
     message: "이미지 업로드에 성공했습니다",
-    url: `/img/${req.file.filename}`,
+    url: `/img/${req.files.filename}`,
   });
 });
 
