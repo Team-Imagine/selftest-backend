@@ -236,6 +236,10 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     question.unlocked = unlocked ? true : false; // 열람 여부
     question.owned = question.solved > 0 && question.unlocked ? true : false; //소장 여부
 
+    question.points_to_solve = question.solved > 0 ? 0 : POINTS_TO_DECREASE_TO_SOLVE_QUESTION;
+    question.points_to_unlock = question.unlocked ? 0 : POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS;
+    question.points_to_own = question.points_to_solve + question.points_to_unlock;
+
     // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
     const view_log = await QuestionViewLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
 
