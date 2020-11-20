@@ -186,7 +186,15 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
     // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const question = await Question.findOne({
-      attributes: ["id", "title", "type", "content", "blocked", "createdAt"],
+      attributes: [
+        "id",
+        "title",
+        "type",
+        "content",
+        "blocked",
+        "createdAt",
+        [sequelize.fn("COUNT", sequelize.col("question_view_logs.id")), "views"], // 조회수
+      ],
       where: {
         id: req.params.id,
       },
@@ -195,6 +203,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
         { model: Course, attributes: ["title"], include: [{ model: Subject, attributes: ["title"] }] },
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
         { model: LikeableEntity, attributes: ["id", "entity_type"] },
+        { model: QuestionViewLog, attributes: [] },
       ],
       raw: true,
     });
