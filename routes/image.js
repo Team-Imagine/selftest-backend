@@ -27,11 +27,19 @@ const upload = multer({
 
 // 이미지 업로드 및 경로 반환
 router.post("/upload", isLoggedIn, upload.array("img"), (req, res, next) => {
+  const images = [];
+  for (let i = 0; i < req.files.length; i++) {
+    const destination = req.files[i].destination;
+    const filename = req.files[i].filename;
+    const url = destination + filename;
+    const image = { destination, filename, url };
+    images.push(image);
+  }
 
   return res.json({
     success: true,
     message: "이미지 업로드에 성공했습니다",
-    url: `/img/${req.files.filename}`,
+    images,
   });
 });
 
