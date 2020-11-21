@@ -108,6 +108,51 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
   }
 });
 
+// 문제 ID에 해당하는 문제들을 시험에 추가
+router.post("/question", isLoggedIn, async (req, res, next) => {
+  const { test_set_id, questions } = req.body; // 시험 ID와 문제 ID로 구성된 문제 배열
+
+  // 접속한 사용자의 ID를 받아옴
+  const user_id = await getLoggedInUserId(req, res);
+
+  if (!user_id) {
+    return res.status(401).json({
+      success: false,
+      error: "userNotLoggedIn",
+      message: "사용자가 로그인 되어있지 않습니다",
+    });
+  }
+
+  let test_questions = []; // 시험 문제 배열
+  for (const question of questions) {
+    // 주어진 시험 ID에 해당하는 시험이 존재하는지 확인
+    // 또한 로그인한 사용자 ID가 일치해야함
+    const test_set = await TestSet.findOne({ where: { id: test_set_id, user_id: user_id }, raw: true });
+    if (!test_set) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 시험 ID에 해당하는 시험이 존재하지 않습니다",
+      });
+    }
+
+    // 시험 문제 생성
+    const test_question = await TestQuestion.create({
+      test_set_id: test_set.id,
+      question_id: question.id,
+    });
+
+    // 시험 문제 배열에 추가
+    test_questions.push(test_question);
+  }
+
+  return res.json({
+    success: true,
+    message: "문제 목록이 시험에 등록되었습니다",
+    test_questions,
+  });
+});
+
 // 빈 시험을 하나 추가
 router.post("/", isLoggedIn, async (req, res, next) => {
   const { title } = req.body;
@@ -137,63 +182,6 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       success: false,
       error: "requestFails",
       message: "빈 시험을 생성하는 데 실패했습니다",
-    });
-  }
-});
-
-// 문제 ID에 해당하는 문제를 시험 문제로서 시험에 추가
-router.post("/question", isLoggedIn, async (req, res, next) => {
-  const { test_set_id, question_id } = req.body; // 시험 ID와 문제 ID
-  try {
-    // 접속한 사용자의 ID를 받아옴
-    const user_id = await getLoggedInUserId(req, res);
-
-    if (!user_id) {
-      return res.status(401).json({
-        success: false,
-        error: "userNotLoggedIn",
-        message: "사용자가 로그인 되어있지 않습니다",
-      });
-    }
-
-    // 주어진 시험 ID에 해당하는 시험이 존재하는지 확인
-    // 또한 로그인한 사용자 ID가 일치해야함
-    const test_set = await TestSet.findOne({ where: { id: test_set_id, user_id: user_id }, raw: true });
-    if (!test_set) {
-      return res.status(400).json({
-        success: false,
-        error: "entryNotExists",
-        message: "해당 시험 ID에 해당하는 시험이 존재하지 않습니다",
-      });
-    }
-
-    // 주어진 문제 ID에 해당하는 문제가 존재하는지 확인
-    const question = await Question.findOne({ where: { id: question_id }, raw: true });
-    if (!question) {
-      return res.status(400).json({
-        success: false,
-        error: "entryNotExists",
-        message: "해당 문제 ID에 해당하는 문제가 존재하지 않습니다",
-      });
-    }
-
-    // 시험 문제 생성
-    const test_question = await TestQuestion.create({
-      test_set_id: test_set.id,
-      question_id: question.id,
-    });
-
-    return res.json({
-      success: true,
-      message: "문제가 성공적으로 시험에 등록되었습니다",
-      test_question,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      error: "requestFails",
-      message: "문제를 시험에 추가하는 데 실패했습니다",
     });
   }
 });
