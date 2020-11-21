@@ -123,24 +123,53 @@ router.post("/question", isLoggedIn, async (req, res, next) => {
     });
   }
 
+  // 주어진 시험 ID에 해당하는 시험이 존재하는지 확인
+  // 또한 로그인한 사용자 ID가 일치해야함
+  const test_set = await TestSet.findOne({ where: { id: test_set_id, user_id: user_id }, raw: true });
+  if (!test_set) {
+    return res.status(400).json({
+      success: false,
+      error: "entryNotExists",
+      message: "해당 시험 ID에 해당하는 시험이 존재하지 않습니다",
+    });
+  }
+
   let test_questions = []; // 시험 문제 배열
+  let existing_questions = []; // 이미 해당 시험에 존재하는 문제라 추가 실패한 문제 배열
+  let not_existing_questions = []; // 존재하지 않는 문제들
+  let invalid_questions = []; // 추가에 실패한 문제들
+
   for (const question of questions) {
-    // 주어진 시험 ID에 해당하는 시험이 존재하는지 확인
-    // 또한 로그인한 사용자 ID가 일치해야함
-    const test_set = await TestSet.findOne({ where: { id: test_set_id, user_id: user_id }, raw: true });
-    if (!test_set) {
-      return res.status(400).json({
-        success: false,
-        error: "entryNotExists",
-        message: "해당 시험 ID에 해당하는 시험이 존재하지 않습니다",
-      });
+    // 문제가 애초에 존재하는지 확인
+    const existing_question = await Question.findOne({
+      where: { id: question.id },
+    });
+
+    if (!existing_question) {
+      not_existing_questions.push({ question_id: question.id });
+      continue;
     }
 
-    // 시험 문제 생성
-    const test_question = await TestQuestion.create({
-      test_set_id: test_set.id,
-      question_id: question.id,
+    // 해당 시험에 해당 문제가 이미 존재하는지 확인
+    const existing_test_question = await TestQuestion.findOne({
+      where: { test_set_id: test_set.id, question_id: question.id },
     });
+
+    if (existing_test_question) {
+      existing_questions.push({ test_set_id: test_set.id, question_id: existing_test_question.question_id });
+      continue;
+    }
+
+    try {
+      // 시험 문제 생성
+      const test_question = await TestQuestion.create({
+        test_set_id: test_set.id,
+        question_id: question.id,
+      });
+    } catch (error) {
+      // 시험 문제 추가 실패
+      invalid_questions.push({ question_id: question.id });
+    }
 
     // 시험 문제 배열에 추가
     test_questions.push(test_question);
@@ -150,6 +179,9 @@ router.post("/question", isLoggedIn, async (req, res, next) => {
     success: true,
     message: "문제 목록이 시험에 등록되었습니다",
     test_questions,
+    existing_questions,
+    not_existing_questions,
+    invalid_questions,
   });
 });
 
@@ -164,6 +196,16 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       return res.status(401).json({
         success: false,
         error: "userNotLoggedIn",
+        message: "사용자가 로그인 되어있지 않습니다",
+      });
+    }
+
+    // 사용자가 이미 해당 제목을 가진 시험을 가지고 있을 경우
+    const existing_test_set = await TestSet.findOne({ where: { title, user_id } });
+    if (existing_test_set) {
+      return res.status(401).json({
+        success: false,
+        error: "entryExists",
         message: "사용자가 로그인 되어있지 않습니다",
       });
     }
