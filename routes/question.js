@@ -55,7 +55,7 @@ router.get("/", async (req, res, next) => {
     let question_type = req.query.question_type; // 문제 유형
     let q_question_title = req.query.q_question_title; // 문제 제목 검색어
     let q_question_content = req.query.q_question_content; // 문제 내용 검색어
-    let sort = req.query.sort; // 정렬 옵션
+    let sort = req.query.sort || "created_at:desc"; // 정렬 옵션
 
     // 정렬 옵션 설정
     let sortOptions = getSortOptions(sort);
