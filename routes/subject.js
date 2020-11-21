@@ -94,7 +94,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     if (existingSubject) {
       return res.status(400).json({
         success: false,
-        error: "entryNotExists",
+        error: "entryAlreadyExists",
         message: "해당 과목 이름으로 등록된 과목이 존재합니다",
       });
     }
