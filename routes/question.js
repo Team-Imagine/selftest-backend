@@ -28,6 +28,7 @@ const {
   Course,
   ShortAnswerItem,
   QuestionSolvedLog,
+  UnlockedQuestion,
   Subject,
 } = require("../models");
 const Op = require("sequelize").Op;
@@ -36,7 +37,6 @@ const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { getSortOptions } = require("./bin/get_sort_options");
 const { get_likes, get_dislikes, get_average_difficulty, get_average_freshness } = require("./bin/get_evaluations");
 const sanitizeHtml = require("sanitize-html");
-const UnlockedQuestion = require("../models/test/unlocked_question");
 
 // 정렬이 가능한 컬럼 정의
 const sortableColumns = ["id", "title", "type", "content", "blocked", "created_at"];
