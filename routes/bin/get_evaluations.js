@@ -31,7 +31,6 @@ module.exports.get_average_difficulty = async function (question_id) {
     },
     raw: true,
   });
-  console.log(average_difficulty);
 
   return average_difficulty[0];
 };
