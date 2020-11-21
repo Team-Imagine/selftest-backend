@@ -15,6 +15,7 @@ const sequelize = require("sequelize");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { get_likes, get_dislikes } = require("./bin/get_evaluations");
 const { getSortOptions } = require("./bin/get_sort_options");
+const { convertUploadedImageUrls } = require("./bin/convert_uploaded_image_urls");
 
 // 정렬이 가능한 컬럼 정의
 const sortableColumns = ["id", "content", "blocked", "created_at"];
@@ -193,7 +194,7 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
 // 문제 ID와 정답 내용을 바탕으로 정답 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  let { content } = req.body;
+  let { content, uploaded_images } = req.body;
   const { question_id } = req.body;
   try {
     // 동일하거나 유사한 정답이 있는 경우
@@ -220,6 +221,11 @@ router.post("/", isLoggedIn, async (req, res, next) => {
         error: "contentNotEnough",
         message: "생성할 정답 내용이 부족합니다",
       });
+    }
+
+    // blob URL에서 업로드한 이미지 URL로 대체
+    if (uploaded_images.length > 0) {
+      content = convertUploadedImageUrls(content, uploaded_images);
     }
 
     // 정답 생성
@@ -253,7 +259,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 // 정답 ID에 해당하는 정답 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
   const { id } = req.params;
-  let { content } = req.body;
+  let { content, uploaded_images } = req.body;
 
   try {
     // 접속한 사용자의 ID를 받아옴
@@ -276,6 +282,11 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
         error: "contentNotEnough",
         message: "수정할 문제 내용이 부족합니다",
       });
+    }
+
+    // blob URL에서 업로드한 이미지 URL로 대체
+    if (uploaded_images.length > 0) {
+      content = convertUploadedImageUrls(content, uploaded_images);
     }
 
     await Answer.update({ content }, { where: { id } });

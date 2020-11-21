@@ -35,6 +35,7 @@ const Op = require("sequelize").Op;
 const sequelize = require("sequelize");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { getSortOptions } = require("./bin/get_sort_options");
+const { convertUploadedImageUrls } = require("./bin/convert_uploaded_image_urls");
 const { get_likes, get_dislikes, get_average_difficulty, get_average_freshness } = require("./bin/get_evaluations");
 const sanitizeHtml = require("sanitize-html");
 
@@ -279,7 +280,8 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
-  let { title, type, content, multiple_choice_items, short_answer_items } = req.body; // 제목, 유형, 내용, 객관식 문제 보기 또는 주관식 문제 정답 예시
+  // 제목, 유형, 내용, 객관식 문제 보기 또는 주관식 문제 정답 예시, /upload 라우트에서 업로드한 이미지 배열
+  let { title, type, content, multiple_choice_items, short_answer_items, uploaded_images } = req.body;
   const { course_title } = req.body;
   try {
     // 동일하거나 유사한 문제가 있는 경우
@@ -352,6 +354,11 @@ router.post("/", isLoggedIn, async (req, res, next) => {
           message: "주관식 문제의 정답 예시가 부족합니다",
         });
       }
+    }
+
+    // blob URL에서 업로드한 이미지 URL로 대체
+    if (uploaded_images.length > 0) {
+      content = convertUploadedImageUrls(content, uploaded_images);
     }
 
     // 문제 생성
@@ -427,7 +434,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 // 문제 ID에 해당하는 문제 내용을 수정
 router.put("/:id", isLoggedIn, async (req, res, next) => {
   const { id } = req.params;
-  let { title, content, multiple_choice_items, short_answer_items } = req.body;
+  let { title, content, multiple_choice_items, short_answer_items, uploaded_images } = req.body;
   try {
     // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
@@ -479,6 +486,11 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
           { where: { id: short_answer_item.id, question_id: question.id } }
         );
       }
+    }
+
+    // blob URL에서 업로드한 이미지 URL로 대체
+    if (uploaded_images.length > 0) {
+      content = convertUploadedImageUrls(content, uploaded_images);
     }
 
     await Question.update({ title, content }, { where: { id } });
