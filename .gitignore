@@ -5,3 +5,4 @@ node_modules
 
 # uploaded images
 uploads
+public/uploads

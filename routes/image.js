@@ -6,16 +6,16 @@ const { isLoggedIn } = require("./middlewares");
 const router = express.Router();
 
 try {
-  fs.readdirSync("uploads");
+  fs.readdirSync("public/uploads");
 } catch (error) {
-  console.error("uploads 폴더가 없어 uploads 폴더를 생성합니다.");
-  fs.mkdirSync("uploads");
+  console.error("public/uploads 폴더가 없어 uploads 폴더를 생성합니다.");
+  fs.mkdirSync("public/uploads");
 }
 
 const upload = multer({
   storage: multer.diskStorage({
     destination(req, file, cb) {
-      cb(null, "uploads/");
+      cb(null, "public/uploads/");
     },
     filename(req, file, cb) {
       const ext = path.extname(file.originalname);
