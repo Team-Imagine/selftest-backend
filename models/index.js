@@ -24,6 +24,7 @@ const PointLog = require("./user/point_log");
 const PenaltyLog = require("./user/penalty_log");
 const Attendance = require("./user/attendance");
 const VerificationCode = require("./user/verification_code");
+const PasswordResetRequest = require("./user/password_reset_request");
 
 const env = process.env.NODE_ENV || "development";
 const config = require("../config/config")[env];
@@ -56,6 +57,7 @@ db.PointLog = PointLog;
 db.PenaltyLog = PenaltyLog;
 db.Attendance = Attendance;
 db.VerificationCode = VerificationCode;
+db.PasswordResetRequest = PasswordResetRequest;
 
 User.init(sequelize);
 Question.init(sequelize);
@@ -81,6 +83,7 @@ PointLog.init(sequelize);
 PenaltyLog.init(sequelize);
 Attendance.init(sequelize);
 VerificationCode.init(sequelize);
+PasswordResetRequest.init(sequelize);
 
 User.associate(db);
 Question.associate(db);
@@ -106,5 +109,6 @@ PointLog.associate(db);
 PenaltyLog.associate(db);
 Attendance.associate(db);
 VerificationCode.associate(db);
+PasswordResetRequest.associate(db);
 
 module.exports = db;
