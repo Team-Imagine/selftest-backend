@@ -166,13 +166,13 @@ router.post("/question", isLoggedIn, async (req, res, next) => {
         test_set_id: test_set.id,
         question_id: question.id,
       });
+
+      // 시험 문제 배열에 추가
+      test_questions.push(test_question);
     } catch (error) {
       // 시험 문제 추가 실패
       invalid_questions.push({ question_id: question.id });
     }
-
-    // 시험 문제 배열에 추가
-    test_questions.push(test_question);
   }
 
   return res.json({
