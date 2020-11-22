@@ -224,7 +224,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     }
 
     // blob URL에서 업로드한 이미지 URL로 대체
-    if (uploaded_images.length > 0) {
+    if (uploaded_images && uploaded_images.length > 0) {
       content = convertUploadedImageUrls(content, uploaded_images);
     }
 
@@ -285,7 +285,7 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
     }
 
     // blob URL에서 업로드한 이미지 URL로 대체
-    if (uploaded_images.length > 0) {
+    if (uploaded_images && uploaded_images.length > 0) {
       content = convertUploadedImageUrls(content, uploaded_images);
     }
 
