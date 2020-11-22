@@ -1,12 +1,9 @@
 const jwt = require("jsonwebtoken");
-const { PointLog, User, Freshness, Like, Difficulty, PenaltyLog } = require("../models");
+const { User } = require("../models");
 require("dotenv").config();
 
-const express = require("express");
-const router = express.Router();
-
 // 사용자가 정지 상태인지, 이메일 인증은 받았는지 여부는 검사하지 않고 로그인 되어 있는지 검사
-const isJustLoggedIn = async function (req, res, next) {
+module.exports.isJustLoggedIn = async function (req, res, next) {
   try {
     const user = await getLoggedInUserInfo(req, res);
 
@@ -31,7 +28,7 @@ const isJustLoggedIn = async function (req, res, next) {
 };
 
 // 로그인 되어 있는지, 정지 상태거나 이메일 인증을 받지 않은 것은 아닌지 검사
-const isLoggedIn = async function (req, res, next) {
+module.exports.isLoggedIn = async function (req, res, next) {
   try {
     const user = await getLoggedInUserInfo(req, res);
 
@@ -73,7 +70,7 @@ const isLoggedIn = async function (req, res, next) {
   }
 };
 
-const isNotLoggedIn = async function (req, res, next) {
+module.exports.isNotLoggedIn = async function (req, res, next) {
   try {
     const result = await validateJwt(req, res);
 
@@ -92,7 +89,7 @@ const isNotLoggedIn = async function (req, res, next) {
 };
 
 // JWT 토큰 유효 검증 함수
-const validateJwt = function (req, res) {
+module.exports.validateJwt = function (req, res) {
   return new Promise((resolve, reject) => {
     let accesstoken = req.cookies.access_token || null;
     let refreshtoken = req.cookies.refresh_token || null;
@@ -141,7 +138,6 @@ const validateJwt = function (req, res) {
                     refresh_token_maxage.setSeconds(
                       refresh_token_maxage.getSeconds() + req.app.get("jwt_refresh_expiration")
                     );
-                    console.log(refresh_token_maxage);
 
                     // Redis에 저장
                     req.client.set(
@@ -190,14 +186,14 @@ const validateJwt = function (req, res) {
 };
 
 // A little helper function for generation of refresh tokens
-const generateRefreshToken = function (req, uid) {
+module.exports.generateRefreshToken = function (req, uid) {
   const refresh_token = jwt.sign({ uid }, process.env.JWT_SECRET, { expiresIn: req.app.get("jwt_refresh_expiration") });
   return refresh_token;
 };
 
 // 접속한 사용자의 정보를 불러오는 함수 - 사용하려는 라우트에서 isLoggedIn이 미들웨어로 반드시 존재해야 함
 // 인증에 오류가 있을시 null 반환
-const getLoggedInUserInfo = async function (req, res) {
+module.exports.getLoggedInUserInfo = async function (req, res) {
   try {
     await validateJwt(req, res);
 
@@ -229,7 +225,7 @@ const getLoggedInUserInfo = async function (req, res) {
 
 // 접속한 사용자의 id를 불러오는 함수 - 사용하려는 라우트에서 isLoggedIn이 미들웨어로 반드시 존재해야 함
 // 인증에 오류가 있을시 null 반환
-const getLoggedInUserId = async function (req, res) {
+module.exports.getLoggedInUserId = async function (req, res) {
   try {
     await validateJwt(req, res);
 
@@ -243,307 +239,4 @@ const getLoggedInUserId = async function (req, res) {
   }
 };
 
-// 항목에 부여된 좋아요 점수를 합산하는 함수
-const totalLike = async (likeable_entity_id) => {
-  try {
-    let likes = await Like.count({
-      where: { likeable_entity_id, good: true },
-    });
-
-    return likes;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 항목에 부여된 싫어요 점수를 합산하는 함수
-const totalDislike = async (likeable_entity_id) => {
-  try {
-    let dislikes = await Like.count({
-      where: { likeable_entity_id, good: false },
-    });
-
-    return dislikes;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 항목에 부여된 좋아요, 싫어요 점수를 합산하는 함수
-const totalFinalLike = async (likeable_entity_id) => {
-  try {
-    let likes = await totalLike(likeable_entity_id);
-
-    console.log("likes:", likes);
-    let dislikes = await totalDislike(likeable_entity_id);
-    console.log("dislikes:", dislikes);
-    return likes - dislikes;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 문제의 블라인드 처리를 정하는 함수
-const questionBlocked = async (question_id, likeable_entity_id) => {
-  try {
-    let likes = await totalLike(likeable_entity_id);
-
-    let dislikes = await totalDislike(likeable_entity_id);
-
-    // 블라인드 조건: 싫어요 20개 이상 & 싫어요 / 좋아요  2 이상
-    if (dislikes >= 20 && dislikes / likes > 2) {
-      await Question.update(
-        { blocked: true },
-        {
-          where: {
-            question_id: question_id,
-          },
-        }
-      );
-    }
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 문제에 부여된 신선도 점수를 합산하는 함수
-const totalFresh = async (question_id) => {
-  try {
-    let freshnesses = await Freshness.count({
-      where: { question_id, fresh: true },
-    });
-
-    return freshnesses;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 문제에 부여된 !신선도 점수를 합산하는 함수
-const totalStale = async (question_id) => {
-  try {
-    let stalenesses = await Freshness.count({
-      where: { question_id, fresh: false },
-    });
-
-    return stalenesses;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 문제에 부여된 신선도, !신선도 점수를 합산하는 함수
-const totalFinalFresh = async (question_id) => {
-  try {
-    let freshness = await totalFresh(question_id);
-
-    let stalenesses = await totalStale(question_id);
-
-    return freshness - stalenesses;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 문제의 난이도의 평균을 산출하는 함수
-const averageDifficulty = async (question_id) => {
-  try {
-    let difficulties =
-      (await Difficulty.sum("score", {
-        where: { question_id },
-      })) /
-      (await Difficulty.count("score", {
-        where: { question_id },
-      }));
-
-    return difficulties;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-};
-
-// 유저에게 패널티를 부여하는 함수
-const givePenalty = async (req, res) => {
-  const { user_id, content } = req.body;
-
-  let termination_date = new Date();
-
-  termination_date.setDate(termination_date.getDate() + 3);
-
-  try {
-    await PenaltyLog.create({
-      termination_date,
-      content,
-      user_id,
-    });
-
-    await User.update(
-      { active: false },
-      {
-        where: {
-          id: user_id,
-        },
-      }
-    );
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-// 유저에게 포인트를 부여하는 함수
-const givePoint = async (req, res) => {
-  const { user_id, amount, content } = req.body;
-
-  try {
-    await PointLog.create({
-      amount,
-      user_id,
-      content,
-    });
-
-    let userPoint = await User.findOne({
-      attributes: ["point"],
-      where: { id: user_id },
-    });
-
-    await User.update(
-      { point: Number(userPoint.point) + Number(amount) },
-      {
-        where: {
-          id: user_id,
-        },
-      }
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "유저의 포인트 부여에 성공했습니다.",
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      message: "DB 오류",
-    });
-  }
-};
-
-// 한 유저의 전체 포인트 로그를 열람하는 함수
-const readUserPointLog = async (req, res) => {
-  const { user_id } = req.body;
-
-  try {
-    let userPointLog = await PointLog.findAll({
-      attributes: ["user_id", "amount", "content", "createdAt"],
-      where: { user_id },
-      order: [["createdAt", "DESC"]],
-    });
-
-    if (userPointLog.length == 0) {
-      return res.json({
-        success: false,
-        message: "등록된 포인트 로그가 없습니다.",
-      });
-    }
-    res.status(200).json({
-      success: true,
-      message: "등록된 포인트 로그 조회에 성공했습니다.",
-      userPointLog,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.json({
-      success: false,
-      message: "DB 오류",
-    });
-  }
-};
-
-// 한 유저의 포인트를 열람하는 함수
-const readUserPoint = async (req, res) => {
-  const { user_id } = req.body;
-
-  try {
-    let userPoint = await User.findOne({
-      attributes: ["point"],
-      where: { user_id },
-    });
-
-    res.status(200).json({
-      success: true,
-      message: "유저의 포인트 조회에 성공했습니다.",
-      userPoint,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      message: "DB 오류",
-    });
-  }
-};
-
-// 생성된 전체 포인트 로그 열람하는 함수
-const readTotalPointLog = async (req, res) => {
-  try {
-    const pointLogs = await PointLog.findAll({
-      attributes: ["id", "amount", "content", "createdAt", "user_id"],
-      where: {},
-      order: [["id", "DESC"]],
-      limit: 10, // 10개씩 표시
-    });
-
-    if (pointLogs.length == 0) {
-      return res.json({
-        success: false,
-        message: "등록된 포인트 로그가 없습니다.",
-      });
-    }
-    res.status(200).json({
-      success: true,
-      message: "등록된 포인트 로그 목록 조회에 성공했습니다.",
-      pointLogs,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      message: "DB 오류",
-    });
-  }
-};
-
-const similarityCheck = async (req, res) => {
-  
-};
-
-module.exports = {
-  isJustLoggedIn,
-  isLoggedIn,
-  isNotLoggedIn,
-  generateRefreshToken,
-  getLoggedInUserInfo,
-  getLoggedInUserId,
-  givePoint,
-  readUserPoint,
-  readUserPointLog,
-  readTotalPointLog,
-  totalLike,
-  totalDislike,
-  totalFinalLike,
-  totalFresh,
-  totalStale,
-  totalFinalFresh,
-  averageDifficulty,
-  givePenalty,
-  questionBlocked,
-  similarityCheck,
-};
+module.exports.similarityCheck = async (req, res) => {};

@@ -1,7 +1,7 @@
-var express = require("express");
-var router = express.Router();
-const { Question, Difficulty } = require("../models");
+const express = require("express");
+const router = express.Router();
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { Question, Difficulty } = require("../models");
 
 // 주어진 문제 ID에 해당하는 문제에 대해 로그인한 사용자가 난이도를 평가했는지 여부를 확인
 router.get("/:id", isLoggedIn, async (req, res, next) => {

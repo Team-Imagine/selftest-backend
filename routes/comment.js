@@ -1,8 +1,8 @@
-var express = require("express");
-var router = express.Router();
-const { CommentableEntity, Comment, User } = require("../models");
-const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const express = require("express");
+const router = express.Router();
 const sanitizeHtml = require("sanitize-html");
+const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { CommentableEntity, Comment, User } = require("../models");
 
 router.get("/", isLoggedIn, async (req, res, next) => {
   try {

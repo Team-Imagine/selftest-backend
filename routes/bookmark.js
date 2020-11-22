@@ -1,8 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const { User, Question, Course, Bookmark, Subject, CommentableEntity, LikeableEntity } = require("../models");
-const { get_likes, get_dislikes, get_average_difficulty, get_average_freshness } = require("./bin/get_evaluations");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const {
+  get_likes,
+  get_dislikes,
+  get_average_difficulty,
+  get_average_freshness,
+} = require("./bin/manipulators/evaluations");
+const { User, Question, Course, Bookmark, Subject, CommentableEntity, LikeableEntity } = require("../models");
 
 // 해당 문제가 즐겨찾기된 적 있는지 확인한다
 router.get("/:id", isLoggedIn, async (req, res, next) => {

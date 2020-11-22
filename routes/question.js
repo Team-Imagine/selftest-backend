@@ -1,15 +1,23 @@
-const { PythonShell } = require("python-shell");
-var textsimilarity = require('textsimilarity');
-const similarity = require('similarity');
-
-const path = require("path");
-
-var mod = require('korean-text-analytics');
-var task = new mod.TaskQueue();
-
-
 const express = require("express");
 const router = express.Router();
+const { PythonShell } = require("python-shell");
+const textsimilarity = require("textsimilarity");
+const similarity = require("similarity");
+const path = require("path");
+const mod = require("korean-text-analytics");
+const task = new mod.TaskQueue();
+const sequelize = require("sequelize");
+const { Op } = require("sequelize");
+const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { getSortOptions } = require("./bin/get_sort_options");
+const { convertUploadedImageUrls } = require("./bin/convert_uploaded_image_urls");
+const {
+  get_likes,
+  get_dislikes,
+  get_average_difficulty,
+  get_average_freshness,
+} = require("./bin/manipulators/evaluations");
+const sanitizeHtml = require("sanitize-html");
 const {
   User,
   Question,
@@ -31,13 +39,6 @@ const {
   UnlockedQuestion,
   Subject,
 } = require("../models");
-const Op = require("sequelize").Op;
-const sequelize = require("sequelize");
-const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
-const { getSortOptions } = require("./bin/get_sort_options");
-const { convertUploadedImageUrls } = require("./bin/convert_uploaded_image_urls");
-const { get_likes, get_dislikes, get_average_difficulty, get_average_freshness } = require("./bin/get_evaluations");
-const sanitizeHtml = require("sanitize-html");
 
 // 정렬이 가능한 컬럼 정의
 const sortableColumns = ["id", "title", "type", "content", "blocked", "created_at"];
@@ -791,7 +792,7 @@ router.get("/own/:id", isLoggedIn, async (req, res, next) => {
 const titleGet = (title) => {
   let titleList = [];
 
-  mod.ExecuteMorphModule(title, async(err, rep) => {   
+  mod.ExecuteMorphModule(title, async(err, rep) => {
     for(var i in rep.morphed) {
       if(rep.morphed[i].tag === 'NNG' || rep.morphed[i].tag === 'VV' || rep.morphed[i].tag === 'NNP') {
         titleList.push(rep.morphed[i].word);
@@ -804,46 +805,44 @@ const titleGet = (title) => {
 }
 */
 
-const pushList = async (questions) => {   
+const pushList = async (questions) => {
   let doclist = [];
-  for(var i in questions) {
+  for (var i in questions) {
     doclist.push(questions[i].dataValues.title);
   }
   return doclist;
-}
+};
 
-const compareTitle = async(selected, doclist) => {
-  await mod.ExecuteMorphModule(selected.title, async(err, rep) => {   
-    let arr = '';
-    for(var i in rep.morphed) {
-      if(rep.morphed[i].tag === 'NNG' || rep.morphed[i].tag === 'NNP') {
-        arr += rep.morphed[i].word + ' ';
+const compareTitle = async (selected, doclist) => {
+  await mod.ExecuteMorphModule(selected.title, async (err, rep) => {
+    let arr = "";
+    for (var i in rep.morphed) {
+      if (rep.morphed[i].tag === "NNG" || rep.morphed[i].tag === "NNP") {
+        arr += rep.morphed[i].word + " ";
       }
     }
     selected.title = arr;
     console.log(selected.title);
 
-    for(var j in doclist) {
-      await mod.ExecuteMorphModule(doclist[j], async(err, rep) => {
-        
-        let arr = '';
-        for(var k in rep.morphed) {
-          if(rep.morphed[k].tag === 'NNG' || rep.morphed[k].tag === 'NNP') {
-            arr += rep.morphed[k].word + ' ';
+    for (var j in doclist) {
+      await mod.ExecuteMorphModule(doclist[j], async (err, rep) => {
+        let arr = "";
+        for (var k in rep.morphed) {
+          if (rep.morphed[k].tag === "NNG" || rep.morphed[k].tag === "NNP") {
+            arr += rep.morphed[k].word + " ";
           }
         }
 
-        console.log(selected.title, ',', arr, '와의 유사도:', similarity(selected.title, arr));
+        console.log(selected.title, ",", arr, "와의 유사도:", similarity(selected.title, arr));
 
-        if(similarity(selected.title, arr) > 0.5 && similarity(selected.title, arr) !== 1) {
-          console.log(selected.title, ',', arr, similarity(selected.title, arr));
+        if (similarity(selected.title, arr) > 0.5 && similarity(selected.title, arr) !== 1) {
+          console.log(selected.title, ",", arr, similarity(selected.title, arr));
           //console.log(questions[i].dataValues.title, questions[i].dataValues.id,',' , selected.id ," 유사합니다." );
         }
-      })
+      });
     }
-  })
-
-}
+  });
+};
 
 router.post("/test", async (req, res, next) => {
   const { selected_id } = req.body;
@@ -854,7 +853,7 @@ router.post("/test", async (req, res, next) => {
       id: selected_id,
     },
   });
-  
+
   let queryOptions = {
     attributes: ["id", "title", "type", "content", "createdAt"], // 제목까지만 조회
     where: {},
@@ -865,7 +864,7 @@ router.post("/test", async (req, res, next) => {
   let doclist = await pushList(questions);
 
   console.log(doclist);
- 
+
   compareTitle(question.dataValues, doclist);
 
   //console.log(doclist);
@@ -889,7 +888,7 @@ router.post("/test", async (req, res, next) => {
 
     //console.log(data.id);
   });
-  */    
+  */
 });
 
 module.exports = router;

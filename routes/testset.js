@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { User, Question, Course, TestSet, TestQuestion } = require("../models");
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { User, Question, Course, TestSet, TestQuestion } = require("../models");
 
 // 페이지네이션을 이용해 로그인한 사용자가 가진 시험 리스트를 불러옴
 router.get("/", isLoggedIn, async (req, res, next) => {

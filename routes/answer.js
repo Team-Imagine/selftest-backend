@@ -1,5 +1,11 @@
 var express = require("express");
 var router = express.Router();
+const sequelize = require("sequelize");
+const { Op } = require("sequelize");
+const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { get_likes, get_dislikes } = require("./bin/manipulators/evaluations");
+const { getSortOptions } = require("./bin/get_sort_options");
+const { convertUploadedImageUrls } = require("./bin/convert_uploaded_image_urls");
 const {
   User,
   Question,
@@ -10,12 +16,6 @@ const {
   ShortAnswerItem,
   Dislike,
 } = require("../models");
-const Op = require("sequelize").Op;
-const sequelize = require("sequelize");
-const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
-const { get_likes, get_dislikes } = require("./bin/get_evaluations");
-const { getSortOptions } = require("./bin/get_sort_options");
-const { convertUploadedImageUrls } = require("./bin/convert_uploaded_image_urls");
 
 // 정렬이 가능한 컬럼 정의
 const sortableColumns = ["id", "content", "blocked", "created_at"];

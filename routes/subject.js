@@ -1,9 +1,9 @@
 var express = require("express");
 var router = express.Router();
-const { Subject, Course } = require("../models");
-const Op = require("sequelize").Op;
-const { isLoggedIn } = require("./middlewares");
 const sanitizeHtml = require("sanitize-html");
+const { Op } = require("sequelize");
+const { isLoggedIn } = require("./middlewares");
+const { Subject, Course } = require("../models");
 
 // 페이지네이션을 이용해 과목 리스트를 불러옴
 router.get("/", async (req, res, next) => {

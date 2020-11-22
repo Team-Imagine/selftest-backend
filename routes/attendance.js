@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const moment = require("moment");
-const { Attendance } = require("../models");
 const { Op } = require("sequelize");
 const { getLoggedInUserId, isLoggedIn } = require("./middlewares");
+const { Attendance } = require("../models");
 
 // 페이지네이션을 이용해 로그인한 사용자가 여태까지 출석한 날짜를 구함
 router.get("/", isLoggedIn, async (req, res, next) => {

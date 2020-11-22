@@ -1,10 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const crypto = require("crypto");
-const { User, PasswordResetRequest } = require("../models");
 const { isJustLoggedIn, getLoggedInUserId } = require("./middlewares");
 const { sendPasswordResetEmail } = require("./bin/send_email");
+const { User, PasswordResetRequest } = require("../models");
 
 // 사용자 정보 조회
 router.get("/:username", isJustLoggedIn, async (req, res, next) => {

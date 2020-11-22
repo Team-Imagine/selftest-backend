@@ -1,13 +1,12 @@
 const express = require("express");
+const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const sanitizeHtml = require("sanitize-html");
+const { isJustLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
+const { sendVerificationEmail } = require("./bin/send_email");
 const { User, VerificationCode } = require("../models");
-const { isLoggedIn, isJustLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
-const sendVerificationEMail = require("./bin/send_email").sendVerificationEmail;
 require("dotenv").config();
-
-const router = express.Router();
 
 router.post("/register", isNotLoggedIn, async (req, res, next) => {
   let { email, username, password, first_name, last_name, phone_number } = req.body;
@@ -211,7 +210,7 @@ router.post("/send-verification-email", isJustLoggedIn, async (req, res, next) =
         message: "가입 인증이 이미 되어있습니다",
       });
     }
-    await sendVerificationEMail(email);
+    await sendVerificationEmail(email);
 
     return res.json({
       success: true,

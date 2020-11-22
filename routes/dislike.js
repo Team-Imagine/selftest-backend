@@ -1,7 +1,7 @@
-var express = require("express");
-var router = express.Router();
-const { Like, Dislike, LikeableEntity } = require("../models");
+const express = require("express");
+const router = express.Router();
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { Like, Dislike, LikeableEntity } = require("../models");
 
 // 해당 좋아요 객체가 좋아요 및 싫어요 처리된 적 있는지 확인한다
 router.get("/:id", isLoggedIn, async (req, res, next) => {

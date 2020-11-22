@@ -1,5 +1,5 @@
-const { Like, Dislike, Difficulty, Freshness } = require("../../models");
 const sequelize = require("sequelize");
+const { Like, Dislike, Difficulty, Freshness } = require("../../../models");
 
 module.exports.get_likes = async function (likeable_entity_id) {
   const likes = await Like.findAll({
@@ -45,4 +45,16 @@ module.exports.get_average_freshness = async function (question_id) {
   });
 
   return average_freshness[0];
+};
+
+// 항목에 부여된 좋아요, 싫어요 점수를 합산하는 함수
+module.exports.get_total_like_score = async function (likeable_entity_id) {
+  try {
+    let likes = parseInt(await this.get_likes(likeable_entity_id));
+    let dislikes = parseInt(await this.get_dislikes(likeable_entity_id));
+    return likes - dislikes;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 };
