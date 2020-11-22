@@ -96,9 +96,10 @@ router.post("/forgot-password", async (req, res, next) => {
 
 // 인증 코드가 일치할시 새로운 비밀번호로 변경
 router.post("/verify-change-password", async (req, res, next) => {
-  const { code, new_password } = req.params; // 가입 인증 코드
+  const { code, new_password } = req.body; // 가입 인증 코드
 
   try {
+    console.log(code);
     // 인증코드 대조
     const verification_code_in_db = await PasswordResetRequest.findOne({
       where: { code },
@@ -141,7 +142,7 @@ router.post("/verify-change-password", async (req, res, next) => {
 
       // 일치할 경우
       const hash = await bcrypt.hash(new_password, 12);
-      await User.update({ password: hash }, { where: { id: user_id } });
+      await User.update({ password: hash }, { where: { id: verification_code_in_db.user_id } });
 
       return res.json({
         success: true,
