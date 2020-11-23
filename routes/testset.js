@@ -198,7 +198,7 @@ router.get("/:id/answers", isLoggedIn, async (req, res, next) => {
     return res.json({
       success: true,
       message: "해당 ID에 해당하는 시험에 대한 시험 문제의 정답 목록 조회에 성공했습니다",
-      test_questions,
+      test_set,
     });
   } catch (error) {
     console.error(error);
