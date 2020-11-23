@@ -103,6 +103,25 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
       });
     }
 
+    for (let row of test_set.rows[0].test_questions) {
+      let question_id = row.question.id;
+      let question_type = row.question.type;
+
+      if (question_type === "multiple_choice") {
+        // 객관식일 경우, 보기 추가
+        let items = await MultipleChoiceItem.findAll({
+          where: { question_id },
+        });
+        row.question.dataValues.multiple_choice_items = items;
+      } else if (question_type === "short_answer") {
+        // 주관식일 경우, 정답 예시를 추가
+        let items = await ShortAnswerItem.findAll({
+          where: { question_id },
+        });
+        row.question.dataValues.short_answer_items = items;
+      }
+    }
+
     return res.json({
       success: true,
       message: "해당 ID에 해당하는 시험에 대한 시험 문제 목록 조회에 성공했습니다",
