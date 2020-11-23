@@ -98,7 +98,8 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
 
       // 새로운 refresh 토큰과 해당 expiration 생성
       let refresh_token = generateRefreshToken(req, user.id);
-      let refresh_token_maxage = new Date() + req.app.get("jwt_refresh_expiration");
+      let refresh_token_maxage = new Date();
+      refresh_token_maxage.setSeconds(refresh_token_maxage.getSeconds() + req.app.get("jwt_refresh_expiration"));
 
       // 브라우저 httpOnly 쿠키 설정
       res.cookie("access_token", token, {
