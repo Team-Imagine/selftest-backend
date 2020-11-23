@@ -3,7 +3,7 @@ const { User } = require("../models");
 require("dotenv").config();
 
 // 사용자가 정지 상태인지, 이메일 인증은 받았는지 여부는 검사하지 않고 로그인 되어 있는지 검사
-module.exports.isJustLoggedIn = async function (req, res, next) {
+const isJustLoggedIn = async function (req, res, next) {
   try {
     const user = await getLoggedInUserInfo(req, res);
 
@@ -28,7 +28,7 @@ module.exports.isJustLoggedIn = async function (req, res, next) {
 };
 
 // 로그인 되어 있는지, 정지 상태거나 이메일 인증을 받지 않은 것은 아닌지 검사
-module.exports.isLoggedIn = async function (req, res, next) {
+const isLoggedIn = async function (req, res, next) {
   try {
     const user = await getLoggedInUserInfo(req, res);
 
@@ -70,7 +70,7 @@ module.exports.isLoggedIn = async function (req, res, next) {
   }
 };
 
-module.exports.isNotLoggedIn = async function (req, res, next) {
+const isNotLoggedIn = async function (req, res, next) {
   try {
     const result = await validateJwt(req, res);
 
@@ -89,7 +89,7 @@ module.exports.isNotLoggedIn = async function (req, res, next) {
 };
 
 // JWT 토큰 유효 검증 함수
-module.exports.validateJwt = function (req, res) {
+const validateJwt = function (req, res) {
   return new Promise((resolve, reject) => {
     let accesstoken = req.cookies.access_token || null;
     let refreshtoken = req.cookies.refresh_token || null;
@@ -186,14 +186,14 @@ module.exports.validateJwt = function (req, res) {
 };
 
 // A little helper function for generation of refresh tokens
-module.exports.generateRefreshToken = function (req, uid) {
+const generateRefreshToken = function (req, uid) {
   const refresh_token = jwt.sign({ uid }, process.env.JWT_SECRET, { expiresIn: req.app.get("jwt_refresh_expiration") });
   return refresh_token;
 };
 
 // 접속한 사용자의 정보를 불러오는 함수 - 사용하려는 라우트에서 isLoggedIn이 미들웨어로 반드시 존재해야 함
 // 인증에 오류가 있을시 null 반환
-module.exports.getLoggedInUserInfo = async function (req, res) {
+const getLoggedInUserInfo = async function (req, res) {
   try {
     await validateJwt(req, res);
 
@@ -225,7 +225,7 @@ module.exports.getLoggedInUserInfo = async function (req, res) {
 
 // 접속한 사용자의 id를 불러오는 함수 - 사용하려는 라우트에서 isLoggedIn이 미들웨어로 반드시 존재해야 함
 // 인증에 오류가 있을시 null 반환
-module.exports.getLoggedInUserId = async function (req, res) {
+const getLoggedInUserId = async function (req, res) {
   try {
     await validateJwt(req, res);
 
@@ -239,4 +239,15 @@ module.exports.getLoggedInUserId = async function (req, res) {
   }
 };
 
-module.exports.similarityCheck = async (req, res) => {};
+const similarityCheck = async (req, res) => {};
+
+module.exports = {
+  isJustLoggedIn,
+  isLoggedIn,
+  isNotLoggedIn,
+  validateJwt,
+  generateRefreshToken,
+  getLoggedInUserInfo,
+  getLoggedInUserId,
+  similarityCheck,
+};
