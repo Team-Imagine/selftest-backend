@@ -112,14 +112,14 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     for (let j = 0; j < answers.rows.length; j++) {
       // 객관식일 경우, 보기 추가
       if (answers.rows[j]["question.type"] === "multiple_choice") {
-        items = await MultipleChoiceItem.findAll({
+        let items = await MultipleChoiceItem.findAll({
           where: { question_id: answers.rows[j].id, checked: true },
           raw: true,
         });
         answers.rows[j].multiple_choice_answers = items;
       } else if (answers.rows[j]["question.type"] === "short_answer") {
         // 주관식일 경우, 정답 예시를 추가
-        items = await ShortAnswerItem.findAll({
+        let items = await ShortAnswerItem.findAll({
           where: { question_id: answers.rows[j].id },
           raw: true,
         });
@@ -176,6 +176,20 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
         error: "entryNotExists",
         message: "해당 ID에 해당하는 정답이 존재하지 않습니다",
       });
+    }
+
+    // 객관식일 경우, 보기 추가
+    if (answer.question.type === "multiple_choice") {
+      let items = await MultipleChoiceItem.findAll({
+        where: { question_id: answer.id, checked: true },
+      });
+      answer.multiple_choice_answers = items;
+    } else if (answer.question.type === "short_answer") {
+      // 주관식일 경우, 정답 예시를 추가
+      let items = await ShortAnswerItem.findAll({
+        where: { question_id: answer.id },
+      });
+      answer.short_answer_answers = items;
     }
 
     return res.json({
