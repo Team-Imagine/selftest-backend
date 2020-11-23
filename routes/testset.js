@@ -1,7 +1,16 @@
 const express = require("express");
 const router = express.Router();
 const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
-const { User, Question, Course, TestSet, TestQuestion } = require("../models");
+const {
+  User,
+  Question,
+  MultipleChoiceItem,
+  ShortAnswerItem,
+  Answer,
+  Course,
+  TestSet,
+  TestQuestion,
+} = require("../models");
 
 // 페이지네이션을 이용해 로그인한 사용자가 가진 시험 리스트를 불러옴
 router.get("/", isLoggedIn, async (req, res, next) => {
@@ -96,11 +105,104 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
 
     return res.json({
       success: true,
+      message: "해당 ID에 해당하는 시험에 대한 시험 문제 목록 조회에 성공했습니다",
       test_set,
     });
   } catch (error) {
     console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "entryNotExists",
+      message: "해당 ID에 해당하는 시험이 존재하지 않습니다",
+    });
+  }
+});
+
+// 시험 ID에 해당하는 시험에 속하는 시험 문제 정답 정보를 가져옴
+router.get("/:id/answers", isLoggedIn, async (req, res, next) => {
+  try {
+    // 쿼리 기본값
+    let page = req.query.page || 1;
+    let per_page = req.query.per_page || 10;
+    const { id } = req.params; // 시험 ID
+    const user_id = await getLoggedInUserId(req, res); // 사용자 ID
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotLoggedIn",
+        message: "사용자가 로그인 되어있지 않습니다",
+      });
+    }
+
+    let test_set = await TestSet.findOne({ where: { id, user_id } });
+
+    if (!test_set) {
+      return res.json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 ID에 해당하는 시험이 존재하지 않습니다",
+      });
+    }
+
+    const test_questions = await TestQuestion.findAndCountAll({
+      attributes: ["id", "question_id"],
+      where: { test_set_id: test_set.id },
+      include: [
+        {
+          model: Question,
+          attributes: ["id", "type"],
+          where: { blocked: false },
+          include: [
+            { model: User, attributes: ["username"] },
+            { model: Course, attributes: ["title"] },
+          ],
+        },
+      ],
+      offset: (+page - 1) * per_page,
+      limit: +per_page,
+    });
+
+    for (let row of test_questions.rows) {
+      let question_id = row.question.id;
+      const answers = await Answer.findAll({
+        where: { question_id },
+        order: [["created_at", "ASC"]],
+        offset: 0,
+        limit: 1,
+      });
+      row.question.dataValues.answers = answers;
+    }
+
+    for (let row of test_questions.rows) {
+      let question_id = row.question.id;
+      let question_type = row.question.type;
+
+      if (question_type === "multiple_choice") {
+        // 객관식일 경우, 보기 추가
+        let items = await MultipleChoiceItem.findAll({
+          where: { question_id, checked: true },
+        });
+        row.question.dataValues.multiple_choice_answers = items;
+      } else if (question_type === "short_answer") {
+        // 주관식일 경우, 정답 예시를 추가
+        let items = await ShortAnswerItem.findAll({
+          where: { question_id },
+        });
+        row.question.dataValues.short_answer_answers = items;
+      }
+    }
+
+    test_set.dataValues.test_questions = test_questions;
+
     return res.json({
+      success: true,
+      message: "해당 ID에 해당하는 시험에 대한 시험 문제의 정답 목록 조회에 성공했습니다",
+      test_questions,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
       success: false,
       error: "entryNotExists",
       message: "해당 ID에 해당하는 시험이 존재하지 않습니다",
