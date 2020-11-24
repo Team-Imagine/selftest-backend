@@ -277,6 +277,109 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
   }
 });
 
+// 과목 이름에 해당하는 문제 리스트를 평가/난이도 등에 상관 없이 랜덤으로 추출해 가져옴
+router.get("/course/:course_title/random", isLoggedIn, async (req, res, next) => {
+  try {
+    const { course_title } = req.params;
+    let { num_questions } = req.query;
+
+    if (!course_title) {
+      return res.status(400).json({
+        success: false,
+        error: "parametersEmpty",
+        message: "과목 제목을 입력해야 합니다",
+      });
+    }
+
+    if (!num_questions) {
+      return res.status(400).json({
+        success: false,
+        error: "queriesEmtpy",
+        message: "문제 개수를 입력해야 합니다",
+      });
+    }
+    num_questions = parseInt(num_questions);
+
+    // 접속한 사용자의 ID를 받아옴
+    const user_id = await getLoggedInUserId(req, res);
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotLoggedIn",
+        message: "사용자가 로그인 되어있지 않습니다",
+      });
+    }
+
+    const course = await Course.findOne({
+      attributes: ["id", "title"],
+      where: { title: course_title },
+    });
+
+    if (!course) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다",
+      });
+    }
+
+    // 해당 과목에 있는 문제 개수를 최대값으로 설정
+    const num_existing_questions = await Question.count({ where: { course_id: course.id } });
+    const max_questions = Math.min(num_existing_questions, num_questions);
+
+    // 랜덤 문제 선별
+    const questions = await Question.findAndCountAll({
+      where: { course_id: course.id, blocked: false },
+      attributes: [
+        "id",
+        "title",
+        "likeable_entity_id",
+        [sequelize.fn("AVG", sequelize.col("difficulties.score")), "average_difficulty"],
+        [sequelize.fn("AVG", sequelize.col("freshnesses.fresh")), "average_freshness"],
+      ],
+      include: [
+        {
+          model: LikeableEntity,
+          attributes: [
+            "id",
+            [sequelize.fn("COUNT", sequelize.col("good")), "total_likes"],
+            [sequelize.fn("COUNT", sequelize.col("bad")), "total_dislikes"],
+          ],
+          include: [
+            { model: Like, attributes: [], duplicating: false },
+            { model: Dislike, attributes: [], duplicating: false },
+          ],
+          distinct: true,
+          group: ["LikeableEntity.id"],
+          duplicating: false,
+        },
+        { model: Difficulty, attributes: [], duplicating: false },
+        { model: Freshness, attributes: [], duplicating: false },
+        { model: Course, attributes: ["title"], duplicating: false },
+      ],
+      group: ["Question.id"],
+      distinct: true,
+      order: sequelize.literal("rand()"), // 랜덤
+      limit: max_questions,
+    });
+    questions.count = questions.count.length;
+
+    return res.json({
+      success: true,
+      message: "과목에 해당하는 랜덤 문제 목록 조회에 성공했습니다",
+      questions,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "requestFails",
+      message: "과목에 해당하는 랜덤 문제 목록 조회에 실패했습니다",
+    });
+  }
+});
+
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
   // 제목, 유형, 내용, 객관식 문제 보기 또는 주관식 문제 정답 예시, /upload 라우트에서 업로드한 이미지 배열

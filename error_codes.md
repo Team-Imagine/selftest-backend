@@ -56,8 +56,8 @@
 | questionTypeInvalid         | 문제 유형이 올바르지 않은 경우                               |
 | multipleChoiceItemsNotGiven | 객관식 유형 문제의 보기가 없을 경우                          |
 | shortAnswerItemsNotGiven    | 주관식 유형 문제의 정답 예시가 없을 경우                     |
-
-
+| queriesEmpty                | req.query로 들어오는 쿼리가 비어 있을 때                     |
+| parametersEmpty             | req.params로 들어오는 파라미터가 비어 있을 때                |
 
 # Other Functions
 
