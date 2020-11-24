@@ -392,10 +392,10 @@ router.post("/", isLoggedIn, async (req, res, next) => {
     // 사용자가 이미 해당 제목을 가진 시험을 가지고 있을 경우
     const existing_test_set = await TestSet.findOne({ where: { title, user_id } });
     if (existing_test_set) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
         error: "entryExists",
-        message: "사용자가 로그인 되어있지 않습니다",
+        message: "해당 제목을 가진 시험을 이미 보유하고 있습니다",
       });
     }
 
