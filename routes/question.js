@@ -156,7 +156,6 @@ router.get("/", async (req, res, next) => {
     }
 
     // 비활성화되지 않은 문제만 불러옴
-    // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const questions = await Question.findAndCountAll(queryOptions);
 
     // Get likes, dislikes, and average difficulty and freshness
@@ -186,7 +185,6 @@ router.get("/", async (req, res, next) => {
 // 문제 ID에 따른 문제 정보를 가져옴
 router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
-    // TODO: 좋아요, 신선해요, 난이도, 댓글 수 등 추가
     const question = await Question.findOne({
       attributes: [
         "id",
