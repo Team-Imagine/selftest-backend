@@ -380,6 +380,172 @@ router.get("/course/:course_title/random", isLoggedIn, async (req, res, next) =>
   }
 });
 
+// 과목 이름에 해당하는 문제 리스트를 평가/난이도를 반영해 가져옴
+router.get("/course/:course_title/evaluation-based", isLoggedIn, async (req, res, next) => {
+  const QUESTION_REQUEST_MULTIPLIER = 3; // 각 level별로 요청할 문제 개수의 배수
+  // 각 level별 문제 난이도 범위
+  // [a, b] => [a, b)의 범위를 가짐
+  let level_boundaries = [
+    [0, 5], // level 1
+    [5, 7], // level 2
+    [7, 10], // level 3
+  ];
+
+  try {
+    const { course_title } = req.params;
+    let num_questions = parseInt(req.query.num_questions) || 25;
+
+    if (!course_title) {
+      return res.status(400).json({
+        success: false,
+        error: "parametersEmpty",
+        message: "과목 제목을 입력해야 합니다",
+      });
+    }
+
+    // 접속한 사용자의 ID를 받아옴
+    const user_id = await getLoggedInUserId(req, res);
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotLoggedIn",
+        message: "사용자가 로그인 되어있지 않습니다",
+      });
+    }
+
+    const course = await Course.findOne({
+      attributes: ["id", "title"],
+      where: { title: course_title },
+    });
+
+    if (!course) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다",
+      });
+    }
+
+    // 비율에 따른 문제 개수 조정
+    let num_questions_leveled = [
+      parseInt(num_questions * 0.4), // Level 1: 40%
+      parseInt(num_questions * 0.4), // Level 2: 40%
+      parseInt(num_questions * 0.2), // Level 3: 20%
+    ];
+
+    // 비율로 더했을 때 값이 부족한 경우
+    let temp = num_questions - num_questions_leveled.reduce((a, b) => a + b);
+    let cnt = 0;
+    while (temp > 0) {
+      num_questions_leveled[cnt] += 1;
+      cnt = (cnt + 1) % 3; // 돌아가면서 추가
+    }
+
+    let queryOptions = {
+      where: { course_id: course.id, blocked: false },
+      attributes: [
+        "id",
+        "title",
+        "likeable_entity_id",
+        [sequelize.fn("AVG", sequelize.col("difficulties.score")), "average_difficulty"],
+        [sequelize.fn("AVG", sequelize.col("freshnesses.fresh")), "average_freshness"],
+      ],
+      include: [
+        {
+          model: LikeableEntity,
+          attributes: [
+            "id",
+            [sequelize.fn("COUNT", sequelize.col("good")), "total_likes"],
+            [sequelize.fn("COUNT", sequelize.col("bad")), "total_dislikes"],
+          ],
+          include: [
+            { model: Like, attributes: [], duplicating: false },
+            { model: Dislike, attributes: [], duplicating: false },
+          ],
+          distinct: true,
+          group: ["LikeableEntity.id"],
+          duplicating: false,
+        },
+        { model: Difficulty, attributes: [], duplicating: false },
+        { model: Freshness, attributes: [], duplicating: false },
+        { model: Course, attributes: ["title"], duplicating: false },
+      ],
+      group: ["Question.id"],
+      having: {
+        average_difficulty: {
+          [Op.or]: {
+            [Op.eq]: null,
+            [Op.and]: {
+              [Op.gte]: 0,
+              [Op.lt]: 4,
+            },
+          },
+        },
+      },
+      distinct: true,
+      raw: true,
+      // TODO: 좋아요에서 싫어요를 빼고, 신선도에 가중치
+      order: [[sequelize.fn("COUNT", sequelize.col("good")), "DESC"]], // 평가순으로 정렬
+    };
+
+    let leveled_questions = [];
+    for (let i = 0; i < 3; i++) {
+      queryOptions.limit = num_questions_leveled[i] * QUESTION_REQUEST_MULTIPLIER;
+
+      if (i > 0) {
+        queryOptions.having = {
+          [Op.and]: [
+            sequelize.where(sequelize.fn("AVG", sequelize.col("difficulties.score")), ">=", level_boundaries[i][0]),
+            sequelize.where(sequelize.fn("AVG", sequelize.col("difficulties.score")), "<=", level_boundaries[i][1]),
+          ],
+        };
+      }
+
+      leveled_questions.push(await Question.findAll(queryOptions));
+    }
+
+    // 각 level별로 DB 내에 문제의 개수가 부족하다면 아래 level 문제로 충당시킴
+    let num_questions_insufficient = []; // level별 부족한 문제 수
+    for (let i = 0; i < 3; i++) {
+      // 해당 level에서 부족한 문제수 = 해당 level에서 필요한 문제 수 - 해당 level에서 받아온 문제 수
+      num_questions_insufficient.push(num_questions_leveled[i] - leveled_questions[i].length);
+    }
+
+    for (let i = 1; i >= 0; i--) {
+      // 상위 level에서 문제가 부족할 경우
+      if (num_questions_insufficient[i + 1] > 0) {
+        num_questions_leveled[i] += num_questions_insufficient[i + 1]; // 현재 level 문제 개수 다시 계산
+        num_questions_leveled[i + 1] -= num_questions_insufficient[i + 1]; // 상위 level 문제 개수 다시 계산
+        num_questions_insufficient[i] = num_questions_leveled[i] - leveled_questions[i].length; // 부족한 문제 수 다시 계산
+      }
+    }
+
+    // 문제를 필요한 것보다 3배씩 받아왔으니 랜덤으로 줄임
+    for (let i = 0; i < 3; i++) {
+      const shuffled = leveled_questions[i].sort(() => 0.5 - Math.random());
+      let selected = shuffled.slice(0, num_questions_leveled[i]);
+      leveled_questions[i] = selected;
+    }
+
+    // 문제 배열을 flatten 시켜서 깔끔하게 만듦
+    questions = [].concat.apply([], leveled_questions);
+
+    return res.json({
+      success: true,
+      message: "과목에 해당하는 평가 기반 문제 목록 조회에 성공했습니다",
+      questions,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "requestFails",
+      message: "과목에 해당하는 평가 기반 문제 목록 조회에 실패했습니다",
+    });
+  }
+});
+
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
   // 제목, 유형, 내용, 객관식 문제 보기 또는 주관식 문제 정답 예시, /upload 라우트에서 업로드한 이미지 배열
