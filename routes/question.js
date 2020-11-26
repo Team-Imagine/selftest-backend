@@ -478,7 +478,7 @@ router.get("/course/:course_title/evaluation-based", isLoggedIn, async (req, res
             [Op.eq]: null,
             [Op.and]: {
               [Op.gte]: 0,
-              [Op.lt]: 4,
+              [Op.lte]: 5,
             },
           },
         },
@@ -496,7 +496,7 @@ router.get("/course/:course_title/evaluation-based", isLoggedIn, async (req, res
       if (i > 0) {
         queryOptions.having = {
           [Op.and]: [
-            sequelize.where(sequelize.fn("AVG", sequelize.col("difficulties.score")), ">=", level_boundaries[i][0]),
+            sequelize.where(sequelize.fn("AVG", sequelize.col("difficulties.score")), ">", level_boundaries[i][0]),
             sequelize.where(sequelize.fn("AVG", sequelize.col("difficulties.score")), "<=", level_boundaries[i][1]),
           ],
         };
