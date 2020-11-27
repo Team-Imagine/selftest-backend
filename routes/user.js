@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const { isJustLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { isJustLoggedIn, getLoggedInUserId, getLoggedInUserInfo } = require("./middlewares");
 const { sendPasswordResetEmail } = require("./bin/send_email");
-const { User, PasswordResetRequest } = require("../models");
+const { User, PasswordResetRequest, PointLog, PenaltyLog } = require("../models");
 
 // 사용자 정보 조회
 router.get("/:username", isJustLoggedIn, async (req, res, next) => {
@@ -29,6 +29,119 @@ router.get("/:username", isJustLoggedIn, async (req, res, next) => {
       success: true,
       message: "사용자 정보 조회에 성공했습니다",
       user,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "requestFails",
+      message: "요청 오류",
+    });
+  }
+});
+
+// 사용자 포인트 내역 조회
+router.get("/:username/point-logs", isJustLoggedIn, async (req, res, next) => {
+  try {
+    const { username } = req.params; // 조회할 사용자 이름
+    let page = req.query.page || 1;
+    let per_page = req.query.per_page || 10;
+
+    // 조회할 사용자 정보 조회
+    const requested_user = await User.findOne({
+      where: { username: username },
+      attributes: ["id", "username", "point", "active", "created_at"],
+      raw: true,
+    });
+
+    // 조회할 사용자가 DB에 존재하지 않은 경우
+    if (!requested_user) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 닉네임을 가진 사용자가 존재하지 않습니다",
+      });
+    }
+
+    const logged_in_user = await getLoggedInUserInfo(req, res);
+    if (logged_in_user.id != requested_user.id) {
+      return res.status(400).json({
+        success: false,
+        error: "userMismatches",
+        message: "자신의 포인트 내역만 조회할 수 있습니다",
+      });
+    }
+
+    const point_logs = await PointLog.findAndCountAll({
+      attributes: ["content", "amount", "created_at"],
+      where: { user_id: logged_in_user.id },
+      order: [["created_at", "DESC"]],
+      offset: (+page - 1) * per_page,
+      limit: +per_page,
+    });
+
+    return res.json({
+      success: true,
+      message: "사용자 포인트 내역 조회에 성공했습니다",
+      point_logs,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "requestFails",
+      message: "요청 오류",
+    });
+  }
+});
+
+// 사용자 제재 내역 조회
+router.get("/:username/penalty-logs", isJustLoggedIn, async (req, res, next) => {
+  try {
+    const { username } = req.params; // 조회할 사용자 이름
+    let page = req.query.page || 1;
+    let per_page = req.query.per_page || 10;
+
+    // 조회할 사용자 정보 조회
+    const requested_user = await User.findOne({
+      where: { username: username },
+      attributes: ["id", "username", "point", "active", "created_at"],
+      raw: true,
+    });
+
+    // 조회할 사용자가 DB에 존재하지 않은 경우
+    if (!requested_user) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 닉네임을 가진 사용자가 존재하지 않습니다",
+      });
+    }
+
+    const logged_in_user = await getLoggedInUserInfo(req, res);
+    if (logged_in_user.id != requested_user.id) {
+      return res.status(400).json({
+        success: false,
+        error: "userMismatches",
+        message: "자신의 제재 내역만 조회할 수 있습니다",
+      });
+    }
+
+    const penalty_logs = await PenaltyLog.findAndCountAll({
+      attributes: ["content", "termination_date", "created_at"],
+      where: { user_id: logged_in_user.id },
+      order: [
+        ["created_at", "DESC"],
+        ["termination_date", "DESC"],
+      ],
+      offset: (+page - 1) * per_page,
+      limit: +per_page,
+    });
+
+    return res.json({
+      success: true,
+      message: "사용자 제재 내역 조회에 성공했습니다",
+      penalty_logs,
     });
   } catch (error) {
     console.error(error);
