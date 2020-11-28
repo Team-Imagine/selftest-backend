@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const sanitizeHtml = require("sanitize-html");
 const { isJustLoggedIn, getLoggedInUserId, getLoggedInUserInfo } = require("./middlewares");
 const { sendPasswordResetEmail } = require("./bin/send_email");
 const { User, PasswordResetRequest, PointLog, PenaltyLog } = require("../models");
