@@ -83,7 +83,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     };
 
     const bookmarks = await Bookmark.findAndCountAll(queryOptions);
-    console.log(bookmarks);
+
     // Get likes, dislikes, and average difficulty and freshness
     for (let i = 0; i < bookmarks.rows.length; i++) {
       const likeable_entity_id = bookmarks.rows[i]["question.likeable_entity.id"];

@@ -212,7 +212,6 @@ router.post("/verify-change-password", async (req, res, next) => {
   const { code, new_password } = req.body; // 가입 인증 코드
 
   try {
-    console.log(code);
     // 인증코드 대조
     const verification_code_in_db = await PasswordResetRequest.findOne({
       where: { code },

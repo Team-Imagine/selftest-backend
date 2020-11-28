@@ -22,7 +22,6 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     let is_liked = (await Like.findOne({ where: { user_id, likeable_entity_id } })) ? true : false;
     let is_disliked = (await Dislike.findOne({ where: { user_id, likeable_entity_id } })) ? true : false;
 
-    console.log(likeable_entity);
     return res.json({
       success: true,
       is_liked,

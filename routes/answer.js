@@ -327,7 +327,6 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
   try {
     // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
-    console.log(user_id);
 
     // 접속한 사용자의 ID와 query에 있는 정답의 user_id룰 대조
     const answer = await Answer.findOne({ where: { id: id }, raw: true });
