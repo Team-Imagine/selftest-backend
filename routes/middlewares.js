@@ -117,6 +117,11 @@ const validateJwt = function (req, res) {
                   // hacking 시도 감지
                   // 해당 사용자에 대해서, 해당 값을 가진 refresh 토큰이 없거나
                   // 또는 refresh token이 request로부터 온 것과 storage로부터 온 것이 다르다는 것을 의미
+
+                  // 브라우저로부터 httpOnly 쿠키도 삭제
+                  res.clearCookie("access_token");
+                  res.clearCookie("refresh_token");
+
                   reject("refreshTokenDiffersFromServer");
                 } else {
                   // refresh 토큰이 expire된 경우
