@@ -378,7 +378,7 @@ router.delete("/", isJustLoggedIn, async (req, res, next) => {
       });
     }
     // 로그인 검증
-    const user_id = getLoggedInUserId(req, res);
+    const user_id = await getLoggedInUserId(req, res);
     const user = await User.findOne({ where: { id: user_id } }); // 현재 로그인한 사용자 정보
 
     // 비밀번호 확인
