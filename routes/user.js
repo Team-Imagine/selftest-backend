@@ -162,7 +162,7 @@ router.get("/", isJustLoggedIn, async (req, res, next) => {
     // 조회할 사용자 정보 조회
     const user = await User.findOne({
       where: { id: user_id },
-      attributes: ["id", "username", "point", "active", "verified", "created_at"],
+      attributes: ["id", "username","email","point", "active", "verified", "created_at"],
       raw: true,
     });
 
@@ -377,7 +377,6 @@ router.delete("/", isJustLoggedIn, async (req, res, next) => {
         message: "사용자 비밀번호가 주어지지 않았습니다",
       });
     }
-
     // 로그인 검증
     const user_id = getLoggedInUserId(req, res);
     const user = await User.findOne({ where: { id: user_id } }); // 현재 로그인한 사용자 정보
