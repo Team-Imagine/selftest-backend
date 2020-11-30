@@ -163,7 +163,7 @@ router.get("/", isJustLoggedIn, async (req, res, next) => {
     // 조회할 사용자 정보 조회
     const user = await User.findOne({
       where: { id: user_id },
-      attributes: ["id", "username","email","point", "active", "verified", "created_at"],
+      attributes: ["id", "username", "email", "point", "active", "verified", "created_at"],
       raw: true,
     });
 
@@ -368,29 +368,9 @@ router.patch("/", isJustLoggedIn, async (req, res, next) => {
 
 // 로그인한 사용자 탈퇴 (비밀번호 일치할 경우만 성공)
 router.delete("/", isJustLoggedIn, async (req, res, next) => {
-  const { password } = req.body;
   try {
-    if (!password) {
-      return res.status(401).json({
-        success: false,
-        error: "authFails",
-        message: "사용자 비밀번호가 주어지지 않았습니다",
-      });
-    }
     // 로그인 검증
     const user_id = await getLoggedInUserId(req, res);
-    const user = await User.findOne({ where: { id: user_id } }); // 현재 로그인한 사용자 정보
-
-    // 비밀번호 확인
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        error: "authFails",
-        message: "사용자 비밀번호가 일치하지 않습니다",
-      });
-    }
 
     // 사용자 삭제
     await User.destroy({ where: { id: user_id } });
