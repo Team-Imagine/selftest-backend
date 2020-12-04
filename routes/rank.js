@@ -15,6 +15,7 @@ router.get("/", async (req, res, next) => {
     let queryOptions = {
       attributes: [
         "username",
+        "point",
         [Sequelize.fn("COUNT", Sequelize.literal("DISTINCT question_solved_logs.id")), "num_solved_questions"],
         [Sequelize.fn("COUNT", Sequelize.literal("DISTINCT questions.id")), "num_uploaded_questions"],
       ],
@@ -25,8 +26,9 @@ router.get("/", async (req, res, next) => {
       group: ["User.id"], // user.id
       where: { active: true, verified: true }, // 이메일 인증되어 있고 정지되지 않은 사람만 조회
       order: [
-        [Sequelize.fn("COUNT", Sequelize.literal("DISTINCT question_solved_logs.id")), "DESC"], // 1. 문제를 많이 푼 순
-        [Sequelize.fn("COUNT", Sequelize.literal("DISTINCT questions.id")), "DESC"], // 2. 문제를 많이 올린 순
+        ["point", "DESC"], // 1. 포인트 순
+        [Sequelize.fn("COUNT", Sequelize.literal("DISTINCT question_solved_logs.id")), "DESC"], // 2. 문제를 많이 푼 순
+        [Sequelize.fn("COUNT", Sequelize.literal("DISTINCT questions.id")), "DESC"], // 3. 문제를 많이 올린 순
       ],
       offset: (+page - 1) * per_page,
       limit: +per_page,
