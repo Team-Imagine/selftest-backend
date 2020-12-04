@@ -14,7 +14,7 @@ const apiRouter = require("./routes/api");
 
 const { sequelize } = require("./models");
 const passportConfig = require("./config/passport");
-const { createDefaultRoles, assignRolesToLegacyUsers } = require("./routes/bin/roles_on_server_start");
+const { createDefaultRoles, assignRolesToLegacyUsers } = require("./routes/bin/manipulators/roles");
 
 const app = express();
 app.use(cors());

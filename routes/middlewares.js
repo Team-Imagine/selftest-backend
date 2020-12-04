@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { User, UserRole, Role } = require("../models");
+const { getRoleId } = require("./bin/manipulators/roles");
 require("dotenv").config();
 
 // 사용자가 정지 상태인지, 이메일 인증은 받았는지 여부는 검사하지 않고 로그인 되어 있는지 검사
@@ -285,12 +286,6 @@ const getLoggedInUserId = async function (req, res) {
   }
 };
 
-// role_name으로 전달 받은 역할 이름이 존재하다면 해당 역할 ID를 반환
-const getRoleId = async function (role_name) {
-  const role = await Role.findOne({ where: { role_name } });
-  return role ? role.id : null;
-};
-
 const similarityCheck = async (req, res) => {};
 
 module.exports = {
@@ -302,6 +297,5 @@ module.exports = {
   generateRefreshToken,
   getLoggedInUserInfo,
   getLoggedInUserId,
-  getRoleId,
   similarityCheck,
 };
