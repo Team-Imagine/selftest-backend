@@ -14,6 +14,7 @@ const apiRouter = require("./routes/api");
 
 const { sequelize } = require("./models");
 const passportConfig = require("./config/passport");
+const { createDefaultRoles, assignRolesToLegacyUsers } = require("./routes/bin/roles_on_server_start");
 
 const app = express();
 app.use(cors());
@@ -90,6 +91,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(app.get("port"), () => {
+app.listen(app.get("port"), async () => {
   console.log(app.get("port"), "번 포트에서 대기 중");
+
+  await createDefaultRoles();
+  await assignRolesToLegacyUsers();
 });
