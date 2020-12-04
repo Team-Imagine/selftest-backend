@@ -8,7 +8,7 @@ const mod = require("korean-text-analytics");
 const task = new mod.TaskQueue();
 const sequelize = require("sequelize");
 const { Op } = require("sequelize");
-const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { isLoggedIn, getLoggedInUserId, isLoggedInAsAdmin } = require("./middlewares");
 const { getSortOptions } = require("./bin/get_sort_options");
 const { convertUploadedImageUrls } = require("./bin/convert_uploaded_image_urls");
 const {
@@ -182,97 +182,137 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// 문제 ID에 따른 문제 정보를 가져옴
-router.get("/:id", isLoggedIn, async (req, res, next) => {
+// 페이지네이션을 이용해 비공개 되어 있는 문제 리스트를 불러옴
+router.get("/blocked", isLoggedInAsAdmin, async (req, res, next) => {
   try {
-    const question = await Question.findOne({
-      attributes: [
-        "id",
-        "title",
-        "type",
-        "content",
-        "blocked",
-        "createdAt",
-        [sequelize.fn("COUNT", sequelize.col("question_view_logs.id")), "views"], // 조회수
-      ],
-      where: {
-        id: req.params.id,
-      },
+    // 쿼리 기본값
+    let page = req.query.page || 1;
+    let per_page = req.query.per_page || 10;
+    let course_title = req.query.course_title; // 강의 제목
+    let question_type = req.query.question_type; // 문제 유형
+    let q_question_title = req.query.q_question_title; // 문제 제목 검색어
+    let q_question_content = req.query.q_question_content; // 문제 내용 검색어
+    let sort = req.query.sort || "created_at:desc"; // 정렬 옵션
+
+    // 정렬 옵션 설정
+    let sortOptions = getSortOptions(sort);
+
+    if (!sortableColumns.includes(sortOptions.column)) {
+      return res.status(400).json({
+        success: false,
+        error: "requestFails",
+        message: "정렬에 필요한 컬럼 이름이 잘못됐습니다",
+      });
+    }
+
+    if (sortOptions.order !== "asc" && sortOptions.order !== "desc") {
+      return res.status(400).json({
+        success: false,
+        error: "requestFails",
+        message: "정렬에 필요한 정렬 순서명이 잘못됐습니다",
+      });
+    }
+
+    let queryOptions = {
+      attributes: ["id", "title", "type", "blocked", "createdAt"], // 제목까지만 조회
+      where: { blocked: true }, // 블라인드 처리된 문제만 카운트
       include: [
         { model: User, attributes: ["username"] },
         { model: Course, attributes: ["title"], include: [{ model: Subject, attributes: ["title"] }] },
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
         { model: LikeableEntity, attributes: ["id", "entity_type"] },
-        { model: QuestionViewLog, attributes: [] },
       ],
+      order: [[sortOptions.column, sortOptions.order]],
+      offset: (+page - 1) * per_page,
+      limit: +per_page,
       raw: true,
-    });
+    };
 
-    const likeable_entity_id = question["likeable_entity.id"];
-    question["likeable_entity.likes.total_likes"] = (await get_likes(likeable_entity_id)).total_likes;
-    question["likeable_entity.dislikes.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes;
-    question["difficulties.average_difficulty"] = (await get_average_difficulty(question.id)).average_difficulty;
-    question["freshnesses.average_freshness"] = (await get_average_freshness(question.id)).average_freshness;
-
-    if (!question) {
-      return res.status(400).json({
-        success: false,
-        error: "entryNotExists",
-        message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
+    // 강의 이름을 전달받았다면 강의 이름으로 검색
+    if (course_title) {
+      const course = await Course.findOne({
+        attributes: ["id", "title"],
+        where: { title: course_title },
       });
+
+      if (!course) {
+        return res.status(400).json({
+          success: false,
+          error: "entryNotExists",
+          message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다",
+        });
+      }
+      queryOptions.where.course_id = course.id;
     }
 
-    // 객관식일 경우, 보기를 불러옴
-    if (question.type === "multiple_choice") {
-      question.multiple_choice_items = await MultipleChoiceItem.findAll({ where: { question_id: question.id } });
+    // 문제 유형을 전달받았다면 문제 유형으로 검색
+    if (question_type) {
+      if (question_type !== "multiple_choice" && question_type !== "short_answer" && question_type !== "essay") {
+        return res.status(400).json({
+          success: false,
+          error: "questionTypeInvalid",
+          message: "문제 유형이 올바르지 않습니다",
+        });
+      }
+
+      queryOptions.where.type = question_type;
     }
 
-    // 주관식일 경우, 정답 예시를 불러옴
-    if (question.type === "short_answer") {
-      question.short_answer_items = await ShortAnswerItem.findAll({ where: { question_id: question.id } });
+    // 문제 제목 검색어를 전달 받았을 경우
+    if (q_question_title) {
+      // 문제 검색 키워드 길이 제한
+      if (q_question_title.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "contentNotEnough",
+          message: "검색어는 2자 이상이어야 합니다",
+        });
+      }
+      // TODO: HTML 태그 제거 후 검색
+      queryOptions.where.title = {
+        [Op.like]: "%" + q_question_title + "%",
+      };
     }
 
-    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
+    // 문제 내용 검색어를 전달 받았을 경우
+    if (q_question_content) {
+      // 문제 검색 키워드 길이 제한
+      if (q_question_content.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "contentNotEnough",
+          message: "검색어는 2자 이상이어야 합니다",
+        });
+      }
+      // TODO: HTML 태그 제거 후 검색
+      queryOptions.where.content = {
+        [Op.like]: "%" + q_question_content + "%",
+      };
+    }
 
-    // 문제를 풀이한 적 있거나, 열람한 적 있거나, 소장하고 있는지 여부의 정보를 추가
-    const solve_log = await QuestionSolvedLog.findAll({
-      where: { question_id: question.id, user_id: user_id },
-      raw: true,
-    }); // 여태 해당 문제를 풀이한 적 있는지 여부
-    const unlocked = await UnlockedQuestion.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 열람한 적 있는지 조회
+    // 비활성화되지 않은 문제만 불러옴
+    const questions = await Question.findAndCountAll(queryOptions);
 
-    question.solved = solve_log ? solve_log.length : 0; // 채점 횟수
-    question.unlocked = unlocked ? true : false; // 열람 여부
-    question.owned = question.solved > 0 && question.unlocked ? true : false; //소장 여부
-
-    question.points_to_solve = question.solved > 0 ? 0 : POINTS_TO_DECREASE_TO_SOLVE_QUESTION;
-    question.points_to_unlock = question.unlocked ? 0 : POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS;
-    question.points_to_own = question.points_to_solve + question.points_to_unlock;
-
-    // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
-    const view_log = await QuestionViewLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
-
-    // 조회한 적이 없다면 문제 조회를 기록
-    if (!view_log) {
-      // 조회 기록
-      await QuestionViewLog.create({
-        question_id: question.id,
-        user_id,
-      });
+    // Get likes, dislikes, and average difficulty and freshness
+    for (let i = 0; i < questions.rows.length; i++) {
+      const likeable_entity_id = questions.rows[i]["likeable_entity.id"];
+      questions.rows[i]["likeable_entity.total_likes"] = (await get_likes(likeable_entity_id)).total_likes;
+      questions.rows[i]["likeable_entity.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes;
+      questions.rows[i]["average_difficulty"] = (await get_average_difficulty(questions.rows[i].id)).average_difficulty;
+      questions.rows[i]["average_freshness"] = (await get_average_freshness(questions.rows[i].id)).average_freshness;
     }
 
     return res.json({
       success: true,
-      message: "등록된 문제 조회에 성공했습니다",
-      point_decrement: 0,
-      question,
+      message: "비공개 문제 목록 조회에 성공했습니다",
+      questions,
     });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
       success: false,
-      error: "entryNotExists",
-      message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
+      error: "requestFails",
+      message: "요청 오류",
     });
   }
 });
@@ -546,6 +586,101 @@ router.get("/course/:course_title/evaluation-based", isLoggedIn, async (req, res
   }
 });
 
+// 문제 ID에 따른 문제 정보를 가져옴
+router.get("/:id", isLoggedIn, async (req, res, next) => {
+  try {
+    const question = await Question.findOne({
+      attributes: [
+        "id",
+        "title",
+        "type",
+        "content",
+        "blocked",
+        "createdAt",
+        [sequelize.fn("COUNT", sequelize.col("question_view_logs.id")), "views"], // 조회수
+      ],
+      where: {
+        id: req.params.id,
+      },
+      include: [
+        { model: User, attributes: ["username"] },
+        { model: Course, attributes: ["title"], include: [{ model: Subject, attributes: ["title"] }] },
+        { model: CommentableEntity, attributes: ["id", "entity_type"] },
+        { model: LikeableEntity, attributes: ["id", "entity_type"] },
+        { model: QuestionViewLog, attributes: [] },
+      ],
+      raw: true,
+    });
+
+    const likeable_entity_id = question["likeable_entity.id"];
+    question["likeable_entity.likes.total_likes"] = (await get_likes(likeable_entity_id)).total_likes;
+    question["likeable_entity.dislikes.total_dislikes"] = (await get_dislikes(likeable_entity_id)).total_dislikes;
+    question["difficulties.average_difficulty"] = (await get_average_difficulty(question.id)).average_difficulty;
+    question["freshnesses.average_freshness"] = (await get_average_freshness(question.id)).average_freshness;
+
+    if (!question) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
+      });
+    }
+
+    // 객관식일 경우, 보기를 불러옴
+    if (question.type === "multiple_choice") {
+      question.multiple_choice_items = await MultipleChoiceItem.findAll({ where: { question_id: question.id } });
+    }
+
+    // 주관식일 경우, 정답 예시를 불러옴
+    if (question.type === "short_answer") {
+      question.short_answer_items = await ShortAnswerItem.findAll({ where: { question_id: question.id } });
+    }
+
+    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
+
+    // 문제를 풀이한 적 있거나, 열람한 적 있거나, 소장하고 있는지 여부의 정보를 추가
+    const solve_log = await QuestionSolvedLog.findAll({
+      where: { question_id: question.id, user_id: user_id },
+      raw: true,
+    }); // 여태 해당 문제를 풀이한 적 있는지 여부
+    const unlocked = await UnlockedQuestion.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 열람한 적 있는지 조회
+
+    question.solved = solve_log ? solve_log.length : 0; // 채점 횟수
+    question.unlocked = unlocked ? true : false; // 열람 여부
+    question.owned = question.solved > 0 && question.unlocked ? true : false; //소장 여부
+
+    question.points_to_solve = question.solved > 0 ? 0 : POINTS_TO_DECREASE_TO_SOLVE_QUESTION;
+    question.points_to_unlock = question.unlocked ? 0 : POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS;
+    question.points_to_own = question.points_to_solve + question.points_to_unlock;
+
+    // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
+    const view_log = await QuestionViewLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
+
+    // 조회한 적이 없다면 문제 조회를 기록
+    if (!view_log) {
+      // 조회 기록
+      await QuestionViewLog.create({
+        question_id: question.id,
+        user_id,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "등록된 문제 조회에 성공했습니다",
+      point_decrement: 0,
+      question,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "entryNotExists",
+      message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
+    });
+  }
+});
+
 // 강의 이름과 문제 내용을 바탕으로 문제 생성
 router.post("/", isLoggedIn, async (req, res, next) => {
   // 제목, 유형, 내용, 객관식 문제 보기 또는 주관식 문제 정답 예시, /upload 라우트에서 업로드한 이미지 배열
@@ -762,6 +897,43 @@ router.put("/:id", isLoggedIn, async (req, res, next) => {
     }
 
     await Question.update({ title, content }, { where: { id } });
+
+    return res.json({
+      success: true,
+      message: "문제 정보를 성공적으로 갱신했습니다",
+      question: { id: question.id },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "entryNotExists",
+      message: "해당 ID를 가진 문제가 존재하지 않습니다",
+    });
+  }
+});
+
+// 등록된 문제의 정보를 일부 수정 (현재는 비공개 되어 있는 문제를 공개 처리만 지원)
+router.patch("/:id", isLoggedInAsAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params; // 문제 ID
+    let { blocked } = req.body; // block 처리 여부
+
+    // 문제가 존재하는지 확인
+    const question = await Question.findOne({ where: { id } });
+    if (!question) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 ID에 해당하는 문제가 존재하지 않습니다",
+      });
+    }
+
+    if (blocked !== undefined) {
+      let queryOptions = { blocked: blocked };
+
+      await Question.update(queryOptions, { where: { id } });
+    }
 
     return res.json({
       success: true,
