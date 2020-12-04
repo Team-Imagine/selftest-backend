@@ -83,7 +83,7 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
 
   // 이메일로 사용자 조회
   try {
-    const user = await User.findOne({ where: { email }, raw: true });
+    const user = await User.findOne({ where: { email }, include: [{ model: UserRole }], raw: true });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -128,11 +128,18 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
         req.client.print
       );
 
-      return res.json({
+      let ret_json = {
         success: true,
         uid: user.id,
         message: "로그인 성공",
-      });
+      };
+
+      const is_admin = user["user_role.role_id"] == (await getRoleId("admin"));
+      if (is_admin) {
+        ret_json.is_admin = is_admin;
+      }
+
+      return res.json(ret_json);
     } else {
       return res.status(401).json({
         success: false,
