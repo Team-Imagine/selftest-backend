@@ -771,6 +771,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       content,
       course_id: course.id,
       user_id,
+      blocked: true, // 시작하면 바로 비공개 처리
     });
 
     // 문제 유형이 객관식인 경우
