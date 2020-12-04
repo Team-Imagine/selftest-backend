@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { User } = require("../models");
+const { User, UserRole, Role } = require("../models");
 require("dotenv").config();
 
 // 사용자가 정지 상태인지, 이메일 인증은 받았는지 여부는 검사하지 않고 로그인 되어 있는지 검사
@@ -88,6 +88,39 @@ const isNotLoggedIn = async function (req, res, next) {
   }
 };
 
+// 사용자가 관리자 역할을 가졌는지 확인
+const isLoggedInAsAdmin = async function (req, res, next) {
+  try {
+    const user = await getLoggedInUserInfo(req, res);
+
+    // 로그인 되어있지 않은 경우
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "userNotLoggedIn",
+        message: "로그인 되어 있지 않습니다",
+      });
+    }
+
+    if (user["user_role.role.role_name"] == "admin") {
+      next();
+    } else {
+      return res.status(401).json({
+        success: false,
+        error: "userNotAdmin",
+        message: "관리자 권한이 없습니다",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(401).json({
+      success: false,
+      error: error,
+      message: "로그인 되어 있지 않습니다",
+    });
+  }
+};
+
 // JWT 토큰 유효 검증 함수
 const validateJwt = function (req, res) {
   return new Promise((resolve, reject) => {
@@ -128,6 +161,7 @@ const validateJwt = function (req, res) {
                   // access 토큰과 refresh token 둘다 새로 갱신
                   if (new Date(redis_token.expires) < new Date()) {
                     console.log("Refresh 토큰 만료 기간 지남 - 새로 갱신");
+
                     // refresh 토큰이 expire 됐으므로 갱신
                     let refresh_token = generateRefreshToken(req, decoded_uid);
 
@@ -139,6 +173,7 @@ const validateJwt = function (req, res) {
                     });
 
                     // refresh 토큰의 expiration 기한을 JWT refresh expiration 기간만큼 초기화/업데이트 (refresh)
+                    console.log("Refresh 토큰 재발급");
                     let refresh_token_maxage = new Date();
                     refresh_token_maxage.setSeconds(
                       refresh_token_maxage.getSeconds() + req.app.get("jwt_refresh_expiration")
@@ -157,6 +192,7 @@ const validateJwt = function (req, res) {
 
                   // access token 발행
                   // 사용자 ID를 JWT payload에 저장함을 유념할 것
+                  console.log("Access 토큰 발급");
                   const payload = { uid: decoded_uid };
                   let token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: req.app.get("jwt_expiration") });
                   // 다시 한 번 토큰을 httpOnly 쿠키에 저장
@@ -171,20 +207,24 @@ const validateJwt = function (req, res) {
             } else {
               // "TokenExpiredError"가 아닌 다른 에러 발생
               // (토큰이 유효하지 않거나 이상한 포맷으로 작성되는 등)
+              console.log("Access 토큰 인증 실패 (기타 예외)");
               reject(err);
             }
           } else {
             // 인증 성공
             // (access 토큰이 유효하고 토큰 기한도 만료되지 않음)
+            console.log("Access 토큰 인증 성공");
             resolve({ res: res, req: req });
           }
         } catch (error) {
+          console.log("Access 토큰 인증 실패");
           console.error(error);
           reject("tokenValidationFails");
         }
       });
     } else {
       // 토큰이 없는데 로그인하려고 할 경우
+      console.log("Access 토큰 또는 Refresh 토큰이 존재하지 않음");
       reject("tokenNotExists");
     }
   });
@@ -218,6 +258,7 @@ const getLoggedInUserInfo = async function (req, res) {
         "active",
         "created_at",
       ],
+      include: [{ model: UserRole, attributes: [], include: [{ model: Role, attributes: ["role_name"] }] }],
       where: { id: decoded_uid },
       raw: true,
     });
@@ -244,15 +285,23 @@ const getLoggedInUserId = async function (req, res) {
   }
 };
 
+// role_name으로 전달 받은 역할 이름이 존재하다면 해당 역할 ID를 반환
+const getRoleId = async function (role_name) {
+  const role = await Role.findOne({ where: { role_name } });
+  return role ? role.id : null;
+};
+
 const similarityCheck = async (req, res) => {};
 
 module.exports = {
   isJustLoggedIn,
   isLoggedIn,
   isNotLoggedIn,
+  isLoggedInAsAdmin,
   validateJwt,
   generateRefreshToken,
   getLoggedInUserInfo,
   getLoggedInUserId,
+  getRoleId,
   similarityCheck,
 };

@@ -1,6 +1,8 @@
 const Sequelize = require("sequelize");
 
 const User = require("./user/user");
+const UserRole = require("./user/user_role");
+const Role = require("./user/role");
 const Question = require("./test/question");
 const QuestionViewLog = require("./test/question_view_log");
 const QuestionSolvedLog = require("./test/question_solved_log");
@@ -34,6 +36,8 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
 db.sequelize = sequelize;
 
 db.User = User;
+db.UserRole = UserRole;
+db.Role = Role;
 db.Question = Question;
 db.QuestionViewLog = QuestionViewLog;
 db.QuestionSolvedLog = QuestionSolvedLog;
@@ -60,6 +64,8 @@ db.VerificationCode = VerificationCode;
 db.PasswordResetRequest = PasswordResetRequest;
 
 User.init(sequelize);
+UserRole.init(sequelize);
+Role.init(sequelize);
 Question.init(sequelize);
 QuestionViewLog.init(sequelize);
 QuestionSolvedLog.init(sequelize);
@@ -86,6 +92,8 @@ VerificationCode.init(sequelize);
 PasswordResetRequest.init(sequelize);
 
 User.associate(db);
+UserRole.associate(db);
+Role.associate(db);
 Question.associate(db);
 QuestionViewLog.associate(db);
 QuestionSolvedLog.associate(db);

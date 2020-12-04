@@ -186,5 +186,12 @@ module.exports = class User extends Sequelize.Model {
       sourceKey: "id",
       onDelete: "CASCADE",
     });
+    db.User.hasOne(db.UserRole, {
+      foreignKey: {
+        name: "user_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+    });
   }
 };

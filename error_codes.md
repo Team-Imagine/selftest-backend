@@ -69,12 +69,13 @@
 | tokenValidationFails          | access token 인증에 실패한 경우                              |
 | tokenNotExists                | access token, refresh token 둘 중 하나라도 존재하지 않는 경우 |
 
-### isLoggedIn
+### isLoggedIn, isAdmin
 
 | 에러 코드 (error)    | 의미                                    |
 | -------------------- | --------------------------------------- |
 | userNotEmailVerified | 사용자가 이메일 인증을 받지 않았을 경우 |
 | userNotActive        | 사용자가 정지 상태일 경우               |
 | userNotLoggedIn      | 기타 상황에서 로그인 되어있지 않은 경우 |
+| userNotAdmin         | 사용자가 관리자 권한이 없을 경우        |
 
 - 그 외 에러는 validateJwt에서 메세지를 가져온다.
