@@ -2,6 +2,8 @@ const { User, UserRole, Role } = require("../../../models");
 
 // role_name으로 전달 받은 역할 이름이 존재하다면 해당 역할 ID를 반환
 const getRoleId = async function (role_name) {
+  await createDefaultRoles();
+
   const role = await Role.findOne({ where: { role_name } });
   return role ? role.id : null;
 };
