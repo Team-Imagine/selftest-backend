@@ -1,6 +1,5 @@
 const jwt = require("jsonwebtoken");
 const { User, UserRole, Role } = require("../models");
-const { getRoleId } = require("./bin/manipulators/roles");
 require("dotenv").config();
 
 // 사용자가 정지 상태인지, 이메일 인증은 받았는지 여부는 검사하지 않고 로그인 되어 있는지 검사
