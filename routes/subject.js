@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 const sanitizeHtml = require("sanitize-html");
 const { Op } = require("sequelize");
-const { isLoggedIn } = require("./middlewares");
+const { isLoggedIn, isLoggedInAsAdmin } = require("./middlewares");
 const { Subject, Course } = require("../models");
 
 // 페이지네이션을 이용해 과목 리스트를 불러옴
@@ -116,6 +116,42 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       success: false,
       error: "requestFails",
       message: "요청 오류",
+    });
+  }
+});
+
+// 과목 이름에 해당하는 과목 삭제
+router.delete("/:title", isLoggedInAsAdmin, async (req, res, next) => {
+  try {
+    const { title } = req.params; // 과목 이름
+
+    const subject = await Subject.findOne({
+      attributes: ["title"],
+      where: { title },
+      order: [["title", "DESC"]],
+    });
+
+    if (!subject) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 이름을 가진 과목이 존재하지 않습니다",
+      });
+    }
+
+    await Subject.destroy({ where: { title } });
+
+    return res.json({
+      success: true,
+      message: "과목을 삭제하는 데 성공했습니다",
+      subject,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "requestFails",
+      message: "과목을 삭제하는 데 실패했습니다",
     });
   }
 });
