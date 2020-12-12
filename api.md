@@ -844,8 +844,8 @@
     "success": true,
     "message": "...",
     "attendances": {
-        count: 10,
-        rows: [
+        "count": 10,
+        "rows": [
             {
                 "created_at": "...",
                 ...
@@ -900,8 +900,8 @@
     "success": true,
     "message": "...",
     "attendances": {
-        count: 10,
-        rows: [
+        "count": 10,
+        "rows": [
             {
                 "content": "가입 기념 포인트",
                 "amount": 100,
@@ -930,8 +930,8 @@
     "success": true,
     "message": "...",
     "attendances": {
-        count: 10,
-        rows: [
+        "count": 10,
+        "rows": [
             {
                 "content": "제재 사유",
                 "termination_date": "...",
