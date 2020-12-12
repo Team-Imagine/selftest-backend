@@ -417,6 +417,111 @@ router.post("/", isLoggedIn, async (req, res, next) => {
   }
 });
 
+// // 과목 이름에 해당하는 문제를 시험으로 생성
+// router.post("/course/:course_title", isLoggedIn, async (req, res, next) => {
+//   try {
+//     const course_title = req.params.course_title; // 과목 이름
+//     const { title, num_questions } = req.body;
+
+//     // 접속한 사용자의 ID를 받아옴
+//     const user_id = await getLoggedInUserId(req, res);
+
+//     if (!user_id) {
+//       return res.status(401).json({
+//         success: false,
+//         error: "userNotLoggedIn",
+//         message: "사용자가 로그인 되어있지 않습니다",
+//       });
+//     }
+
+//     const course = await Course.findOne({
+//       // attributes: ["id", "title"],
+//       where: { title: course_title },
+//       // include: [{ model: Subject, attributes: ["title"] }],
+//     });
+
+//     if (!course) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "entryNotExists",
+//         message: "해당 강의 이름으로 등록된 강의가 존재하지 않습니다",
+//       });
+//     }
+
+//     // 사용자가 이미 해당 제목을 가진 시험을 가지고 있을 경우
+//     const existing_test_set = await TestSet.findOne({ where: { title, user_id } });
+//     if (existing_test_set) {
+//       return res.status(400).json({
+//         success: false,
+//         error: "entryExists",
+//         message: "해당 제목을 가진 시험을 이미 보유하고 있습니다",
+//       });
+//     }
+
+//     // 빈 시험 생성
+//     // const test_set = await TestSet.create({ title, user_id });
+
+//     // 해당 과목에 있는 문제 개수를 최대값으로 설정
+//     const num_existing_questions = await Question.count({ where: { course_id: course.id } });
+//     console.log(num_existing_questions, num_questions);
+//     const max_questions = Math.min(num_existing_questions, num_questions);
+
+//     // TODO: 평가에 따른 문제 선별
+//     // 현재 랜덤 문제 선별
+//     const questions = await Question.findAll({
+//       where: { course_id: course.id, blocked: false },
+//       attributes: [
+//         "id",
+//         "title",
+//         "likeable_entity_id",
+//         [Sequelize.fn("AVG", Sequelize.col("difficulties.score")), "average_difficulty"],
+//         [Sequelize.fn("AVG", Sequelize.col("freshnesses.fresh")), "average_freshness"],
+//       ],
+//       include: [
+//         {
+//           model: LikeableEntity,
+//           attributes: [
+//             "id",
+//             [Sequelize.fn("COUNT", Sequelize.col("good")), "total_likes"],
+//             [Sequelize.fn("COUNT", Sequelize.col("bad")), "total_dislikes"],
+//           ],
+//           include: [
+//             { model: Like, attributes: [], duplicating: false },
+//             { model: Dislike, attributes: [], duplicating: false },
+//           ],
+//           distinct: true,
+//           group: ["LikeableEntity.id"],
+//           duplicating: false,
+//         },
+//         { model: Difficulty, attributes: [], duplicating: false },
+//         { model: Freshness, attributes: [], duplicating: false },
+//         { model: Course, attributes: ["title"] },
+//       ],
+//       group: ["Question.id"],
+//       limit: max_questions,
+//       distinct: true,
+//       // order: [["difficulties", "asc"]],
+//     });
+
+//     return res.json({
+//       success: true,
+//       // message: "문제 목록이 시험에 등록되었습니다",
+//       // test_questions,
+//       questions,
+//       max_questions,
+//       num_questions,
+//       num_existing_questions,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(400).json({
+//       success: false,
+//       error: "requestFails",
+//       message: "빈 시험을 생성하는 데 실패했습니다",
+//     });
+//   }
+// });
+
 // 시험 ID에 해당하는 시험 완전 삭제
 router.delete("/:id", isLoggedIn, async (req, res, next) => {
   // 시험 ID
