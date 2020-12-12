@@ -36,16 +36,11 @@ const {
   Course,
   ShortAnswerItem,
   QuestionSolvedLog,
-  UnlockedQuestion,
   Subject,
 } = require("../models");
 
 // 정렬이 가능한 컬럼 정의
 const sortableColumns = ["id", "title", "type", "content", "blocked", "created_at"];
-
-// 문제에 들어가는 포인트 정의
-const POINTS_TO_DECREASE_TO_SOLVE_QUESTION = 1; // 문제를 풀이 처리 하는데 들어가는 포인트
-const POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS = 2; // 문제 정답 풀이를 열람하는데 들어가는 포인트
 
 // 페이지네이션을 이용해 문제 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -642,16 +637,9 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     const solve_log = await QuestionSolvedLog.findAll({
       where: { question_id: question.id, user_id: user_id },
       raw: true,
-    }); // 여태 해당 문제를 풀이한 적 있는지 여부
-    const unlocked = await UnlockedQuestion.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 열람한 적 있는지 조회
+    });
 
     question.solved = solve_log ? solve_log.length : 0; // 채점 횟수
-    question.unlocked = unlocked ? true : false; // 열람 여부
-    question.owned = question.solved > 0 && question.unlocked ? true : false; //소장 여부
-
-    question.points_to_solve = question.solved > 0 ? 0 : POINTS_TO_DECREASE_TO_SOLVE_QUESTION;
-    question.points_to_unlock = question.unlocked ? 0 : POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS;
-    question.points_to_own = question.points_to_solve + question.points_to_unlock;
 
     // 조회에 성공하면 해당 사용자가 조회를 한 것으로 간주
     const view_log = await QuestionViewLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 조회한 적 있는지 여부
@@ -668,7 +656,6 @@ router.get("/:id", isLoggedIn, async (req, res, next) => {
     return res.json({
       success: true,
       message: "등록된 문제 조회에 성공했습니다",
-      point_decrement: 0,
       question,
     });
   } catch (error) {
@@ -687,10 +674,6 @@ router.post("/", isLoggedIn, async (req, res, next) => {
   let { title, type, content, multiple_choice_items, short_answer_items, uploaded_images } = req.body;
   const { course_title } = req.body;
   try {
-    // 동일하거나 유사한 문제가 있는 경우
-    // TODO: 동일하거나 유사한 문제 존재시 중복문제 또는 복수정답 처리
-    // ...
-
     // 접속한 사용자의 ID를 받아옴
     const user_id = await getLoggedInUserId(req, res);
 
@@ -809,16 +792,6 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       { commentable_entity_id: commentable_entity.id, likeable_entity_id: likeable_entity.id },
       { where: { id: question.id } }
     );
-
-    // 본인이 올린 문제는 조회/풀이/정답 열람에 포인트가 차감이 되면 안되므로,
-    // 1. 조회에 포인트가 차감이 되면 안되므로 조회 기록
-    await QuestionViewLog.create({ question_id: question.id, user_id });
-
-    // 2. 문제 풀이 기록에 추가하여 문제를 풀이 처리
-    await QuestionSolvedLog.create({ user_id, question_id: question.id });
-
-    // 3. 문제를 열람한 문제 목록에 추가하여 문제를 열람 처리
-    await UnlockedQuestion.create({ user_id, question_id: question.id });
 
     return res.json({
       success: true,
@@ -1031,7 +1004,6 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
 });
 
 // 문제 ID에 해당하는 문제를 풀이 처리
-// TODO: 일정 기간/분기 지나면 (e.g., 한 달) 다시 풀이처리 할 수 있도록 하기
 router.get("/solve/:id", isLoggedIn, async (req, res, next) => {
   const question_id = req.params.id; // 문제 풀이처리할 문제 ID
   try {
@@ -1045,175 +1017,12 @@ router.get("/solve/:id", isLoggedIn, async (req, res, next) => {
       });
     }
 
-    // 문제를 푼 적이 있는지 조회
-    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
-    const solve_log = await QuestionSolvedLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 풀이한 적 있는지 여부
-
-    let points_used = 0; // 실제로 차감된 포인트
-
-    // 문제를 한 번도 푼 적이 없다면 포인트 차감
-    if (!solve_log) {
-      // 사용자의 포인트가 충분한지 확인
-      const user = await User.findOne({ where: { id: user_id } });
-
-      // 포인트가 부족한 경우, 요청 거부
-      if (user.point < POINTS_TO_DECREASE_TO_SOLVE_QUESTION) {
-        return res.status(400).json({
-          success: false,
-          error: "notEnoughPoint",
-          message: "문제를 풀이 처리하기 위한 포인트가 부족합니다",
-        });
-      }
-
-      // 충분한 경우, 사용자 포인트 차감
-      await user.decrement("point", { by: POINTS_TO_DECREASE_TO_SOLVE_QUESTION });
-      points_used += POINTS_TO_DECREASE_TO_SOLVE_QUESTION;
-    }
-
     // 문제 풀이 기록에 추가하여 문제를 풀이 처리
     await QuestionSolvedLog.create({ user_id, question_id });
 
     return res.json({
       success: true,
       message: "등록된 문제 풀이 처리에 성공했습니다",
-      point_decrement: points_used,
-      question: {
-        id: question_id,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      error: "requestFails",
-      message: "문제를 풀이 처리 하는데 실패했습니다",
-    });
-  }
-});
-
-// 문제 ID에 해당하는 문제의 정답 풀이의 열람 권한 추가
-router.get("/unlock/:id", isLoggedIn, async (req, res, next) => {
-  const question_id = req.params.id; // 열람할 문제 ID
-  try {
-    // 풀이 열람할 문제
-    const question = await Question.findOne({ where: { id: question_id } });
-    if (!question) {
-      return res.status(400).json({
-        success: false,
-        error: "entryNotExists",
-        message: "해당 문제 ID를 가진 문제가 존재하지 않습니다",
-      });
-    }
-
-    // 문제를 열람한 적이 있는지 조회
-    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
-    const unlocked = await UnlockedQuestion.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 열람한 적 있는지 조회
-
-    if (!unlocked) {
-      // 문제 정답 풀이를 한 번도 열람한 적이 없다면 포인트 차감
-      // 사용자의 포인트가 충분한지 확인
-      const user = await User.findOne({ where: { id: user_id } });
-
-      // 포인트가 부족한 경우, 요청 거부
-      if (user.point < POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS) {
-        return res.status(400).json({
-          success: false,
-          error: "notEnoughPoint",
-          message: "문제 정답 풀이를 열람하기 위한 포인트가 부족합니다",
-        });
-      }
-
-      // 충분한 경우, 사용자 포인트 차감
-      await user.decrement("point", { by: POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS });
-
-      // 문제를 열람한 문제 목록에 추가하여 문제를 열람 처리
-      await UnlockedQuestion.create({ user_id, question_id });
-
-      return res.json({
-        success: true,
-        message: "등록된 문제의 정답 풀이 열람 처리에 성공했습니다",
-        point_decrement: POINTS_TO_DECREASE_TO_SOLVE_QUESTION,
-        question: {
-          id: question_id,
-        },
-      });
-    } else {
-      // 문제 정답 풀이를 한 번이라도 열람한 적이 있다면, 더 이상 열람할 필요가 없음
-      return res.json({
-        success: true,
-        message: "문제 정답 풀이가 이미 열람되어 있습니다",
-        point_decrement: 0,
-        question: {
-          id: question_id,
-        },
-      });
-    }
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      error: "requestFails",
-      message: "문제를 풀이 처리 하는데 실패했습니다",
-    });
-  }
-});
-
-// 문제 ID에 해당하는 문제를 소장
-router.get("/own/:id", isLoggedIn, async (req, res, next) => {
-  const question_id = req.params.id; // 소장할 문제 ID
-  try {
-    // 풀이 열람할 문제
-    const question = await Question.findOne({ where: { id: question_id } });
-    if (!question) {
-      return res.status(400).json({
-        success: false,
-        error: "entryNotExists",
-        message: "해당 문제 ID를 가진 문제가 존재하지 않습니다",
-      });
-    }
-
-    // 문제를 열람한 적이 있는지 조회
-    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
-    const solve_log = await QuestionSolvedLog.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 풀이한 적 있는지 여부
-    const unlocked = await UnlockedQuestion.findOne({ where: { question_id: question.id, user_id: user_id } }); // 여태 해당 문제를 열람한 적 있는지 조회
-
-    let points_used = 0; // 소장하는데 들어간 포인트 = 풀이 차감 포인트 + 열람 차감 포인트
-
-    // 포인트 차감을 위해 사용자 정보를 가져옴
-    const user = await User.findOne({ where: { id: user_id } });
-
-    // 문제를 한 번도 푼 적이 없다면 포인트 차감
-    if (!solve_log) {
-      points_used += POINTS_TO_DECREASE_TO_SOLVE_QUESTION;
-
-      // 문제 풀이 기록에 추가하여 문제를 풀이 처리
-      await QuestionSolvedLog.create({ user_id, question_id });
-    }
-
-    // 문제 정답 풀이를 한 번도 열람한 적이 없다면 포인트 차감
-    if (!unlocked) {
-      points_used += POINTS_TO_DECREASE_TO_UNLOCK_ANSWERS;
-
-      // 문제를 열람한 문제 목록에 추가하여 문제를 열람 처리
-      await UnlockedQuestion.create({ user_id, question_id });
-    }
-
-    // 포인트가 부족한 경우, 요청 거부
-    if (user.point < points_used) {
-      return res.status(400).json({
-        success: false,
-        error: "notEnoughPoint",
-        message: "문제를 소장하기 위한 포인트가 부족합니다",
-      });
-    }
-
-    // 충분한 경우, 사용자 포인트 차감
-    await user.decrement("point", { by: points_used });
-
-    return res.json({
-      success: true,
-      message: "등록된 문제를 성공적으로 소장했습니다",
-      point_decrement: points_used,
       question: {
         id: question_id,
       },
