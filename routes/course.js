@@ -1,9 +1,9 @@
-var express = require("express");
-var router = express.Router();
-const { Subject, Course } = require("../models");
-const Op = require("sequelize").Op;
-const { isLoggedIn } = require("./middlewares");
+const express = require("express");
+const router = express.Router();
 const sanitizeHtml = require("sanitize-html");
+const { Op } = require("sequelize");
+const { isLoggedIn, isLoggedInAsAdmin } = require("./middlewares");
+const { Subject, Course } = require("../models");
 
 // 페이지네이션을 이용해 강의 리스트를 불러옴
 router.get("/", async (req, res, next) => {
@@ -19,7 +19,7 @@ router.get("/", async (req, res, next) => {
       include: [{ model: Subject, attributes: ["title"] }],
       where: {},
       order: [["title", "DESC"]],
-      offset: +page - 1,
+      offset: (+page - 1) * per_page,
       limit: +per_page,
     };
 
@@ -55,7 +55,7 @@ router.get("/", async (req, res, next) => {
       queryOptions.where.subject_id = subject.id;
     }
 
-    const courses = await Course.findAll(queryOptions);
+    const courses = await Course.findAndCountAll(queryOptions);
 
     return res.status(200).json({
       success: true,
@@ -147,6 +147,41 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       success: false,
       error: "requestFails",
       message: "요청 오류",
+    });
+  }
+});
+
+// 강의 이름에 해당하는 강의 삭제
+router.delete("/:title", isLoggedInAsAdmin, async (req, res, next) => {
+  try {
+    const { title } = req.params; // 과목 이름
+
+    const course = await Course.findOne({
+      where: { title },
+      order: [["title", "DESC"]],
+    });
+
+    if (!course) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 이름을 가진 강의가 존재하지 않습니다",
+      });
+    }
+
+    await Course.destroy({ where: { title } });
+
+    return res.json({
+      success: true,
+      message: "강의를 삭제하는 데 성공했습니다",
+      course: { title },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({
+      success: false,
+      error: "requestFails",
+      message: "강의를 삭제하는 데 실패했습니다",
     });
   }
 });

@@ -1,43 +1,41 @@
 const Sequelize = require("sequelize");
 
-module.exports = class LikeableEntity extends Sequelize.Model {
+module.exports = class Dislike extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {
-        entity_type: {
-          type: Sequelize.STRING(20),
+        bad: {
+          type: Sequelize.INTEGER,
+          default_value: 1,
           allowNull: false,
-          comment: "좋아요 객체 타입",
+          comment: "싫어요",
         },
       },
       {
         sequelize,
         timestamps: true,
-        paranoid: true,
         underscored: true,
-        modelName: "likeable_entity",
-        tableName: "likeable_entities",
+        modelName: "dislike",
+        tableName: "dislikes",
         charset: "utf8",
         collate: "utf8_general_ci",
       }
     );
   }
   static associate(db) {
-    db.LikeableEntity.hasMany(db.Like, {
+    db.Dislike.belongsTo(db.LikeableEntity, {
       foreignKey: {
         name: "likeable_entity_id",
         allowNull: false,
       },
-      sourceKey: "id",
-      onDelete: "CASCADE",
+      targetKey: "id",
     });
-    db.LikeableEntity.hasMany(db.Dislike, {
+    db.Dislike.belongsTo(db.User, {
       foreignKey: {
-        name: "likeable_entity_id",
+        name: "user_id",
         allowNull: false,
       },
-      sourceKey: "id",
-      onDelete: "CASCADE",
+      targetKey: "id",
     });
   }
 };

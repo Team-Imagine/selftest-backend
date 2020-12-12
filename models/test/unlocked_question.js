@@ -1,36 +1,29 @@
 const Sequelize = require("sequelize");
 
-module.exports = class Like extends Sequelize.Model {
+module.exports = class UnlockedQuestion extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
-      {
-        good: {
-          type: Sequelize.INTEGER,
-          default_value: 1,
-          allowNull: false,
-          comment: "좋아요",
-        },
-      },
+      {},
       {
         sequelize,
         timestamps: true,
         underscored: true,
-        modelName: "like",
-        tableName: "likes",
+        modelName: "unlocked_question",
+        tableName: "unlocked_questions",
         charset: "utf8",
         collate: "utf8_general_ci",
       }
     );
   }
   static associate(db) {
-    db.Like.belongsTo(db.LikeableEntity, {
+    db.UnlockedQuestion.belongsTo(db.Question, {
       foreignKey: {
-        name: "likeable_entity_id",
+        name: "question_id",
         allowNull: false,
       },
       targetKey: "id",
     });
-    db.Like.belongsTo(db.User, {
+    db.UnlockedQuestion.belongsTo(db.User, {
       foreignKey: {
         name: "user_id",
         allowNull: false,

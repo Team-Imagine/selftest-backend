@@ -9,10 +9,15 @@ module.exports = class Question extends Sequelize.Model {
           allowNull: false,
           comment: "문제 제목",
         },
+        type: {
+          type: Sequelize.STRING(20),
+          allowNull: false,
+          defaultValue: "essay", // 기본값은 서술형
+          comment: "문제 유형 (multiplce_choice / short_answer / essay)",
+        },
         content: {
           type: Sequelize.TEXT,
           allowNull: false,
-          defaultValue: "active",
           comment: "내용",
         },
         blocked: {
@@ -70,6 +75,62 @@ module.exports = class Question extends Sequelize.Model {
         allowNull: true,
       },
       targetKey: "id",
+    });
+    db.Question.hasMany(db.Difficulty, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.Freshness, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.MultipleChoiceItem, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.ShortAnswerItem, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.QuestionViewLog, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.QuestionSolvedLog, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
+    });
+    db.Question.hasMany(db.UnlockedQuestion, {
+      foreignKey: {
+        name: "question_id",
+        allowNull: false,
+      },
+      sourceKey: "id",
+      onDelete: "CASCADE",
     });
   }
 };

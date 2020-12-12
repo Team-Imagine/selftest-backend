@@ -1,8 +1,8 @@
-var express = require("express");
-var router = express.Router();
-const { CommentableEntity, Comment, User } = require("../models");
-const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const express = require("express");
+const router = express.Router();
 const sanitizeHtml = require("sanitize-html");
+const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { CommentableEntity, Comment, User } = require("../models");
 
 router.get("/", isLoggedIn, async (req, res, next) => {
   try {
@@ -20,7 +20,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
         { model: CommentableEntity, attributes: ["id", "entity_type"] },
       ],
       order: [["createdAt", "ASC"]], // 생성된 순서로 정렬
-      offset: +page - 1,
+      offset: (+page - 1) * per_page,
       limit: +per_page,
     };
 
@@ -35,7 +35,7 @@ router.get("/", isLoggedIn, async (req, res, next) => {
     }
 
     // 댓글 조회
-    const comments = await Comment.findAll(queryOptions);
+    const comments = await Comment.findAndCountAll(queryOptions);
 
     return res.json({
       success: true,

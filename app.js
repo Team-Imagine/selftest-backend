@@ -14,6 +14,7 @@ const apiRouter = require("./routes/api");
 
 const { sequelize } = require("./models");
 const passportConfig = require("./config/passport");
+const { createDefaultRoles, assignRolesToLegacyUsers } = require("./routes/bin/manipulators/roles");
 
 const app = express();
 app.use(cors());
@@ -67,22 +68,32 @@ app.use("/api", apiRouter);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
-  const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
-  error.status = 404;
+  const error = {
+    success: false,
+    message: `${req.method} ${req.url} 페이지가 존재하지 않습니다.`,
+  };
   next(error);
 });
 
 // error handler
 app.use((err, req, res, next) => {
   // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") !== "production" ? err : {};
+  // error = req.app.get("env") !== "production" ? err : {};
+  let error = err;
 
   // render the error page
-  res.status(err.status || 500);
-  res.render("error");
+  status = error.status || 500;
+  message = error.message;
+
+  res.status(err.status || 500).json({
+    success: false,
+    message: error.message,
+  });
 });
 
-app.listen(app.get("port"), () => {
+app.listen(app.get("port"), async () => {
   console.log(app.get("port"), "번 포트에서 대기 중");
+
+  await createDefaultRoles();
+  await assignRolesToLegacyUsers();
 });

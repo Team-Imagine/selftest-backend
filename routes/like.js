@@ -1,89 +1,117 @@
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
+const { isLoggedIn, getLoggedInUserId } = require("./middlewares");
+const { Like, Dislike, LikeableEntity } = require("../models");
 
-const { totalLike, totalDislike, givePoint, givePenalty } = require("./middlewares");
-
-const { Like } = require("../models");
-
-// 문제 id에 따른 Like 한 유저 id 목록을 가져온다.
-router.get("/:likeable_entity_id", async (req, res, next) => {
+// 해당 좋아요 객체가 좋아요 및 싫어요 처리된 적 있는지 확인한다
+router.get("/:id", isLoggedIn, async (req, res, next) => {
   try {
-    const userIDs = await Like.findAll({
-      attributes: ["user_id", "createdAt"],
-      where: { likeable_entity_id: req.params.likeable_entity_id },
-      order: [["createdAt", "DESC"]],
-    });
-    return res.status(200).json({
+    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
+    const likeable_entity_id = req.params.id; // 좋아요 처리를 확인할 좋아요 객체 ID
+
+    // 해당 좋아요 객체 ID를 가진 좋아요 객체가 존재하는지 확인
+    const likeable_entity = await LikeableEntity.findOne({ where: { id: likeable_entity_id }, raw: true });
+    if (!likeable_entity) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 좋아요 객체 ID를 가진 객체가 존재하지 않습니다",
+      });
+    }
+
+    let is_liked = (await Like.findOne({ where: { user_id, likeable_entity_id } })) ? true : false;
+    let is_disliked = (await Dislike.findOne({ where: { user_id, likeable_entity_id } })) ? true : false;
+
+    return res.json({
       success: true,
-      userIDs,
+      is_liked,
+      is_disliked,
+      message: "해당 객체의 좋아요 및 싫어요 상태 확인에 성공했습니다",
     });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
       success: false,
-      message: "해당 문제에 해당하는 Like가 존재하지 않습니다.",
+      error: "requestFails",
+      message: "요청 오류",
     });
   }
 });
 
-router.post("/test", async (req, res, next) => {
-  //const { user_id, content } = req.body;
+// 좋아요 객체 ID를 넘겨주면 해당 객체를 좋아요 처리 한다
+router.post("/:id", isLoggedIn, async (req, res, next) => {
   try {
-    await givePoint(req, res);
+    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
+    const likeable_entity_id = req.params.id; // 좋아요 처리할 좋아요 객체 ID
+
+    // 해당 좋아요 객체 ID를 가진 좋아요 객체가 존재하는지 확인
+    const likeable_entity = await LikeableEntity.findOne({ where: { id: likeable_entity_id }, raw: true });
+    if (!likeable_entity) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 좋아요 객체 ID를 가진 객체가 존재하지 않습니다",
+      });
+    }
+
+    // 기존에 있었던 싫어요를 삭제
+    await Dislike.destroy({ where: { user_id, likeable_entity_id } });
+
+    // 기존에 좋아요가 있었다면 다시 생성하지 않음
+    const existing_like = await Like.findOne({ where: { user_id, likeable_entity_id }, raw: true });
+    if (!existing_like) {
+      await Like.create({
+        good: 1,
+        likeable_entity_id,
+        user_id,
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "해당 객체를 성공적으로 좋아요 처리하였습니다",
+    });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
       success: false,
-      message: "DB 오류",
+      error: "requestFails",
+      message: "요청 오류",
     });
   }
 });
 
-// CREATE
-router.post("/", async (req, res, next) => {
-  const { good, likeable_entity_id, user_id } = req.body;
-
+// 좋아요 객체 ID를 넘겨주면 해당 객체를 좋아요 취소 처리한다
+router.delete("/:id", isLoggedIn, async (req, res, next) => {
   try {
-    await Like.create({
-      good,
-      likeable_entity_id,
-      user_id,
-    });
+    const user_id = await getLoggedInUserId(req, res); // 로그인한 사용자 ID
+    const likeable_entity_id = req.params.id;
 
-    let t_like = await totalLike(likeable_entity_id);
-    let t_dislike = await totalDislike(likeable_entity_id);
+    // 해당 좋아요 객체 ID를 가진 좋아요 객체가 존재하는지 확인
+    const likeable_entity = await LikeableEntity.findOne({ where: { id: likeable_entity_id } });
+    if (!likeable_entity) {
+      return res.status(400).json({
+        success: false,
+        error: "entryNotExists",
+        message: "해당 좋아요 객체 ID를 가진 객체가 존재하지 않습니다",
+      });
+    }
 
-    res.status(200).json({
+    const existing_like = await Like.findOne({ where: { user_id, likeable_entity_id }, raw: true });
+    if (existing_like) {
+      await Like.destroy({ where: { user_id, likeable_entity_id } });
+    }
+
+    return res.json({
       success: true,
-      message: "Like가 성공적으로 등록되었습니다.",
-      t_like,
-      t_dislike,
+      message: "해당 객체의 좋아요를 삭제하는데 성공했습니다",
     });
   } catch (error) {
     console.error(error);
     return res.status(400).json({
       success: false,
-      message: "DB 오류",
-    });
-  }
-});
-
-router.delete("/", async (req, res, next) => {
-  const { likeable_entity_id, user_id } = req.body;
-
-  try {
-    const result = await Like.destroy({ where: { user_id: user_id, likeable_entity_id: likeable_entity_id } });
-
-    return res.status(200).json({
-      success: true,
-      message: "문제에 대해 평가한 좋아요를 삭제하는데 성공했습니다.",
-      result,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(400).json({
-      success: false,
-      message: "DB 오류",
+      error: "requestFails",
+      message: "요청 오류",
     });
   }
 });

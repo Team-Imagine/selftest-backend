@@ -1,13 +1,13 @@
 const express = require("express");
+const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const sanitizeHtml = require("sanitize-html");
-const { User, VerificationCode } = require("../models");
-const { isLoggedIn, isJustLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
-const sendVerificationEMail = require("./bin/send_email").sendVerificationEmail;
+const { isJustLoggedIn, isNotLoggedIn, getLoggedInUserId, generateRefreshToken } = require("./middlewares");
+const { getRoleId } = require("./bin/manipulators/roles");
+const { sendVerificationEmail } = require("./bin/send_email");
+const { User, VerificationCode, UserRole } = require("../models");
 require("dotenv").config();
-
-const router = express.Router();
 
 router.post("/register", isNotLoggedIn, async (req, res, next) => {
   let { email, username, password, first_name, last_name, phone_number } = req.body;
@@ -49,7 +49,7 @@ router.post("/register", isNotLoggedIn, async (req, res, next) => {
       });
     }
     const hash = await bcrypt.hash(password, 12);
-    await User.create({
+    const user = await User.create({
       email,
       username,
       password: hash,
@@ -57,11 +57,18 @@ router.post("/register", isNotLoggedIn, async (req, res, next) => {
       last_name,
       phone_number,
     });
+
+    // 역할 배정
+    const user_id = user.id; // 사용자 ID
+    const role_id = await getRoleId("user"); // 일반 사용자 역할 ID
+    await UserRole.create({ user_id, role_id });
+
     return res.status(200).json({
       success: true,
       message: "가입에 성공했습니다",
     });
   } catch (error) {
+    console.error(error);
     return res.status(400).json({
       success: false,
       error: "registerFails",
@@ -77,7 +84,7 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
 
   // 이메일로 사용자 조회
   try {
-    const user = await User.findOne({ where: { email }, raw: true });
+    const user = await User.findOne({ where: { email }, include: [{ model: UserRole }], raw: true });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -99,7 +106,8 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
 
       // 새로운 refresh 토큰과 해당 expiration 생성
       let refresh_token = generateRefreshToken(req, user.id);
-      let refresh_token_maxage = new Date() + req.app.get("jwt_refresh_expiration");
+      let refresh_token_maxage = new Date();
+      refresh_token_maxage.setSeconds(refresh_token_maxage.getSeconds() + req.app.get("jwt_refresh_expiration"));
 
       // 브라우저 httpOnly 쿠키 설정
       res.cookie("access_token", token, {
@@ -121,11 +129,18 @@ router.post("/login", isNotLoggedIn, async (req, res, next) => {
         req.client.print
       );
 
-      return res.json({
+      let ret_json = {
         success: true,
         uid: user.id,
         message: "로그인 성공",
-      });
+      };
+
+      const is_admin = user["user_role.role_id"] == (await getRoleId("admin"));
+      if (is_admin) {
+        ret_json.is_admin = is_admin;
+      }
+
+      return res.json(ret_json);
     } else {
       return res.status(401).json({
         success: false,
@@ -211,7 +226,7 @@ router.post("/send-verification-email", isJustLoggedIn, async (req, res, next) =
         message: "가입 인증이 이미 되어있습니다",
       });
     }
-    await sendVerificationEMail(email);
+    await sendVerificationEmail(email);
 
     return res.json({
       success: true,

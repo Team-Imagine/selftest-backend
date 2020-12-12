@@ -1,38 +1,42 @@
 const Sequelize = require("sequelize");
 
-module.exports = class Like extends Sequelize.Model {
+module.exports = class UserRole extends Sequelize.Model {
   static init(sequelize) {
     return super.init(
       {
-        good: {
+        user_id: {
           type: Sequelize.INTEGER,
-          default_value: 1,
-          allowNull: false,
-          comment: "좋아요",
+          primaryKey: true,
+        },
+        role_id: {
+          type: Sequelize.INTEGER,
+          primaryKey: true,
         },
       },
       {
         sequelize,
         timestamps: true,
+        paranoid: true,
         underscored: true,
-        modelName: "like",
-        tableName: "likes",
+        modelName: "user_role",
+        tableName: "user_roles",
         charset: "utf8",
         collate: "utf8_general_ci",
       }
     );
   }
   static associate(db) {
-    db.Like.belongsTo(db.LikeableEntity, {
+    db.UserRole.belongsTo(db.User, {
       foreignKey: {
-        name: "likeable_entity_id",
+        name: "user_id",
         allowNull: false,
       },
       targetKey: "id",
+      onDelete: "CASCADE",
     });
-    db.Like.belongsTo(db.User, {
+    db.UserRole.belongsTo(db.Role, {
       foreignKey: {
-        name: "user_id",
+        name: "role_id",
         allowNull: false,
       },
       targetKey: "id",
