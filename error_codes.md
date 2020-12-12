@@ -1,3 +1,5 @@
+# SelfTest Backend: Error Codes
+
 ## Authentication
 
 ### POST /auth/register
@@ -41,9 +43,7 @@
 | verificationCodeMismatches | 인증 코드가 일치하지 않을 경우             |
 | emailVerificationFails     | 그 외의 상황에서 가입 인증에 실패했을 경우 |
 
-
-
-## /subject, /course, /question
+## /subject, /course, /question, ... and others
 
 | 에러 코드 (error)           | 의미                                                         |
 | --------------------------- | ------------------------------------------------------------ |
@@ -59,7 +59,7 @@
 | queriesEmpty                | req.query로 들어오는 쿼리가 비어 있을 때                     |
 | parametersEmpty             | req.params로 들어오는 파라미터가 비어 있을 때                |
 
-# Other Functions
+## Other Functions
 
 ### validateJwt
 
@@ -69,7 +69,7 @@
 | tokenValidationFails          | access token 인증에 실패한 경우                              |
 | tokenNotExists                | access token, refresh token 둘 중 하나라도 존재하지 않는 경우 |
 
-### isLoggedIn, isAdmin
+### isLoggedIn, isLoggedInAsAdmin
 
 | 에러 코드 (error)    | 의미                                    |
 | -------------------- | --------------------------------------- |
